@@ -33,7 +33,7 @@ def pure_literals(arr):
     literals = list(set([y for x in arr for y in x]))
     pos = [x for x in literals if x > 0]
     neg = [-1*x for x in literals if x < 0]
-    pures = px for x in pos if x not in neg]
+    pures = [px for x in pos if x not in neg]
     pures.extend([x for x in neg if x not in pos])
     return sorted(pures)
 
