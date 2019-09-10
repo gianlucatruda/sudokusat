@@ -4,8 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pandas = "*"
+matplotlib = "*"
+argparse = "*"
 
 [dev-packages]
+pipreqs = "*"
 
 [requires]
 python_version = "3.6"
