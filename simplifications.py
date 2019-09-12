@@ -1,9 +1,10 @@
 """Implementations of DPLL simplification rules"""
 
-def tautology(arr):
+
+def tautology(sigma):
     """Detects and removes tautologies"""
-    new_arr = []
-    for clause in arr:
+    new_sigma = []
+    for clause in sigma:
         new_clause = clause
         for literal in clause:
             neg_lit = -1 * literal
@@ -12,28 +13,41 @@ def tautology(arr):
                     new_clause.remove(literal)
                 elif neg_lit in new_clause:
                     new_clause.remove(neg_lit)
-        new_arr.append(new_clause)
-    return new_arr
-    
+        new_sigma.append(new_clause)
+    return new_sigma
 
-def unit_clause(arr):
+
+def unit_clause(sigma, variables):
     """Converts unit clauses to True"""
-    new_arr = []
-    for clause in arr:
+    new_sigma = []
+    for clause in sigma:
         new_clause = clause
-        if len(clause) is 1:
-            # TODO try just not appending anything
-            new_clause = [True]
-        new_arr.append(new_clause)
-    return new_arr
+        if len(clause) is not 1:
+            new_sigma.append(new_clause)
+        else:
+            unit = clause[0]
+            if unit < 0:
+                variables[unit] = False  # TODO should we mutate `variables`?
+            else:
+                variables[unit] = True
+    return new_sigma, variables
 
 
-def pure_literals(arr):
+# TODO make this actually perform the operation
+def pure_literals(sigma, variables):
     """Returns a sorted list of the pure literals in the expression"""
-    literals = list(set([y for x in arr for y in x]))
-    pos = [x for x in literals if x > 0]
-    neg = [-1*x for x in literals if x < 0]
-    pures = [px for x in pos if x not in neg]
-    pures.extend([x for x in neg if x not in pos])
-    return sorted(pures)
+    literals = list(set([y for x in sigma for y in x]))
 
+    pos = [x for x in literals if x > 0]
+    neg = [x for x in literals if x < 0]
+    pures = [x for x in pos if (-1 * x) not in neg]
+    pures.extend([x for x in neg if (-1 * x) not in pos])
+
+    # TODO ensure this concurs with theory
+    for p in pures:
+        if p > 0:
+            variables[p] = True
+        else:
+            variables[p] = False
+
+    return sigma, variables
