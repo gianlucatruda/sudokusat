@@ -11,10 +11,12 @@ def dpll(sigma, variables):
     DIMACS notation for the problem.
 
     """
-    print(f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
+    print(
+        f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
     # if expression is empty, then SAT
     if len(sigma) < 1:
         print('SAT')
+        print([x for x in variables.keys() if variables[x] is True])
         return True
     # if expression contains empty clause, UNSAT
     elif sigma == [[]]:
@@ -23,21 +25,28 @@ def dpll(sigma, variables):
     # Simplify (tautologies, unit clauses, pure literals)
     else:
         new_sigma = tautology(sigma)
+        new_sigma = assign_simplify(new_sigma, variables)
         new_sigma, new_variables = pure_literals(new_sigma, variables)
+        new_sigma = assign_simplify(new_sigma, new_variables)
         new_sigma, new_variables = unit_clause(new_sigma, new_variables)
+        new_sigma = assign_simplify(new_sigma, new_variables)
 
     # TODO make a more robust check
     if diff_shape(new_sigma, sigma):
-        # Split with recursive call if needed
         return dpll(new_sigma, new_variables)
+
+    # Split with recursive call if needed
     else:
+        print("SPLIT")
         # Choose a predicate (randomly)
         predicate = choice(list(set([y for x in sigma for y in x])))
         # Choose a value (randomly)
         val = choice([True, False])
         # Set predicate to value and recurse
         variables[predicate] = val
-        dpll(new_sigma, new_variables)
+        new_sigma = assign_simplify(new_sigma, variables)
+
+        return dpll(new_sigma, variables)
 
 
 def diff_shape(a, b):
@@ -48,9 +57,37 @@ def diff_shape(a, b):
     shape_b = (len(a), len([y for x in b for y in x]))
 
     if shape_a == shape_b:
-        return True
-    else:
         return False
+    else:
+        return True
+
+
+def assign_simplify(sigma, values):
+    """Assigns values to an expression and simplifies
+    """
+
+    new_sigma = []
+
+    for clause in sigma:
+        new_clause = []
+        for lit in clause:
+            if lit in [True, False]:
+                new_clause.append(lit)
+            elif values[lit] is not None:
+                new_clause.append(values[lit])
+            else:
+                new_clause.append(lit)
+        if clause.count(True) is 0:  # Keep only if clause contains no `True`
+            new_sigma.append(new_clause)
+    return new_sigma
+
+
+def verify_sat(sigma, end_values):
+    """Verifies that found values do satisfy expression
+    """
+    # TODO
+    out = assign_simplify(sigma, end_values)
+
 
 
 if __name__ == '__main__':
