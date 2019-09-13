@@ -18,7 +18,7 @@ def tautology(sigma):
 
 
 def unit_clause(sigma, variables):
-    """Converts unit clauses to True"""
+    """Assigns unit clauses to True and removes"""
     new_sigma = []
     for clause in sigma:
         new_clause = clause
@@ -33,9 +33,9 @@ def unit_clause(sigma, variables):
     return new_sigma, variables
 
 
-# TODO make this actually perform the operation
 def pure_literals(sigma, variables):
-    """Returns a sorted list of the pure literals in the expression"""
+    """Sets pure literals to corresponding value
+    """
     literals = list(set([y for x in sigma for y in x]))
 
     pos = [x for x in literals if x > 0]
