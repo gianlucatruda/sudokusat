@@ -16,12 +16,12 @@ def dpll(sigma, variables):
     # if expression is empty, then SAT
     if len(sigma) < 1:
         print('SAT')
-        print([x for x in variables.keys() if variables[x] is True])
-        return True
+        print([x for x in variables.keys() if variables[x] == True])
+        return variables
     # if expression contains empty clause, UNSAT
     elif sigma == [[]]:
         print('UNSAT')
-        return False
+        return variables
     # Simplify (tautologies, unit clauses, pure literals)
     else:
         new_sigma = tautology(sigma)
@@ -37,14 +37,14 @@ def dpll(sigma, variables):
 
     # Split with recursive call if needed
     else:
-        print("SPLIT")
-        # Choose a predicate (randomly)
-        predicate = choice(list(set([y for x in sigma for y in x])))
+        # Choose a predicate (randomly) from unassigned variables
+        predicate = choice([k for k in variables.keys() if variables[k] is None])
         # Choose a value (randomly)
         val = choice([True, False])
         # Set predicate to value and recurse
         variables[predicate] = val
         new_sigma = assign_simplify(new_sigma, variables)
+        print(f"SPLIT: {predicate} = {val}")
 
         return dpll(new_sigma, variables)
 
@@ -71,10 +71,14 @@ def assign_simplify(sigma, values):
     for clause in sigma:
         new_clause = []
         for lit in clause:
+            # print(lit, clause)
             if lit in [True, False]:
                 new_clause.append(lit)
-            elif values[lit] is not None:
-                new_clause.append(values[lit])
+            elif values[abs(lit)] is not None:
+                val = values[abs(lit)]
+                sign = 1 if lit > 0 else -1
+                lit_val = val if sign == 1 else (not val)
+                new_clause.append(lit_val)
             else:
                 new_clause.append(lit)
         if clause.count(True) is 0:  # Keep only if clause contains no `True`
@@ -83,11 +87,14 @@ def assign_simplify(sigma, values):
 
 
 def verify_sat(sigma, end_values):
-    """Verifies that found values do satisfy expression
+    """Verifies that found values satisfy expression
     """
-    # TODO
     out = assign_simplify(sigma, end_values)
-
+    for i, clause in enumerate(out):
+        if not any(clause):
+            print(f'Clause {i} untrue: {sigma[i]} -> {clause}')
+            return False
+    return True
 
 
 if __name__ == '__main__':
@@ -97,6 +104,9 @@ if __name__ == '__main__':
     sigma2 = rule_io.read_rules('sudoku-example.txt')
     sigma.extend(sigma2)
     initial_sigma = sigma
-    collapsed = [y for x in sigma for y in x]
-    variables = {k: None for k in list(set(collapsed))}
-    dpll(sigma, variables)
+    collapsed = list(set([abs(y) for x in sigma for y in x]))
+    print(collapsed)
+    import ipdb; ipdb.set_trace()
+    variables = {k: None for k in collapsed}
+    out_variables = dpll(sigma, variables)
+    print(verify_sat(sigma, out_variables))
