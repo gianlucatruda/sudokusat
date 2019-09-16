@@ -4,6 +4,7 @@ from algorithm import Solver, verify_sat
 from data_loader import read_data
 from rule_io import read_rules
 from loguru import logger
+logger.level('WARNING')
 
 
 def test_solver(fname='data/1000 sudokus.txt', n=50):
@@ -28,4 +29,5 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
             passcount += 1
         else:
             failcount += 1
+        print(solver)
         print(f'Pass: {passcount}\tFail: {failcount}')

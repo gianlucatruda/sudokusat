@@ -11,7 +11,7 @@ from abc import ABC
 from typing import List
 
 
-BACKTRACK_THRESHOLD = 200
+BACKTRACK_THRESHOLD = 100  # How many backtracks before timeing out
 
 
 class Solver(ABC):
@@ -26,8 +26,16 @@ class Solver(ABC):
         self.__dpll_calls = 0
 
     def solve(self):
-        res, var = self.dpll(self.sigma, self.variables)
+        res, self.variables = self.dpll(self.sigma, self.variables)
         return res
+
+    def __repr__(self):
+
+        return "<algorithm.Solver metrics={}".format({
+            'splits': self.__splits,
+            'backtracks': self.__backtracks,
+            'calls:': self.__dpll_calls
+        })
 
     def dpll(self, sigma, variables):
         """Apply DPLL algorithm to some expression `sigma`
@@ -43,7 +51,7 @@ class Solver(ABC):
             return False, variables
 
         logger.debug(
-            f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
+            f'DPLL | Clauses: {len(sigma)}\tUndefined: {len([x for x in list(variables.values()) if x is None])}')
 
         if len(sigma) < 1:
             logger.warning('SAT', sigma)
@@ -61,7 +69,6 @@ class Solver(ABC):
             new_sigma = self.assign_simplify(new_sigma, new_variables)
             while self.diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
                 old_sigma = dcopy(new_sigma)
-                logger.debug("SIMPLIFY...")
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)
                 new_sigma, new_variables = unit_clause(
