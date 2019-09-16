@@ -1,102 +1,133 @@
 """Implementation of DPLL algorithm"""
 
+import rule_io
+import data_loader
 from simplifications import tautology, unit_clause, pure_literals
 from random import choice
 import copy
+from copy import deepcopy as dcopy
 from loguru import logger
+from abc import ABC
+from typing import List
 
 
-def dpll(sigma, variables):
-    """Apply DPLL algorithm to some expression `sigma`
+BACKTRACK_THRESHOLD = 200
 
-    sigma must be a list of lists of integers representing
-    DIMACS notation for the problem.
 
-    """
-    logger.debug(
-        f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
+class Solver(ABC):
 
-    if len(sigma) < 1:
-        logger.warning('SAT', sigma)
-        logger.debug([x for x in variables.keys() if variables[x] == True])
-        return True, variables
-    elif [] in sigma:
-        logger.warning('UNSAT')
-        return False, variables
-    # Simplify (tautologies, unit clauses, pure literals)
-    else:
-        old_sigma = [[]]
-        new_sigma = copy.deepcopy(sigma)
-        new_variables = copy.deepcopy(variables)
-        new_sigma = tautology(new_sigma)
-        new_sigma = assign_simplify(new_sigma, new_variables)
-        while diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
-            old_sigma = copy.deepcopy(new_sigma)
-            logger.debug("SIMPLIFY...")
-            new_sigma, new_variables = pure_literals(new_sigma, new_variables)
-            new_sigma, new_variables = unit_clause(new_sigma, new_variables)
-            new_sigma = assign_simplify(new_sigma, new_variables)
+    def __init__(self, sigma: List):
+        self.__sigma = dcopy(sigma)
+        self.sigma = sigma
+        collapsed = list(set([abs(y) for x in sigma for y in x]))
+        self.variables = {k: None for k in collapsed}
+        self.__splits = 0
+        self.__backtracks = 0
+        self.__dpll_calls = 0
 
-        if len(new_sigma) < 1 or [] in sigma:
-            return dpll(new_sigma, new_variables)
+    def solve(self):
+        res, var = self.dpll(self.sigma, self.variables)
+        return res
 
-        # Split with recursive call if needed
-        sigma_pre_split = copy.deepcopy(new_sigma)
-        # Choose a predicate (randomly) from unassigned variables
-        predicate = choice(
-            [k for k in variables.keys() if variables[k] is None])
-        # Choose a value (randomly)
-        val = choice([True, False])
-        # Set predicate to value and recurse
-        new_variables[predicate] = val
-        new_sigma = assign_simplify(new_sigma, variables)
-        logger.info(f"SPLIT: {predicate} = {val}")
-        res, var = dpll(new_sigma, new_variables)
-        if not res:
-            logger.info(f"BACKTRACK: {predicate} = {not val}")
-            val = not val
-            variables[predicate] = val
-            new_sigma = assign_simplify(sigma_pre_split, variables)
-            return dpll(sigma_pre_split, variables)
+    def dpll(self, sigma, variables):
+        """Apply DPLL algorithm to some expression `sigma`
+
+        sigma must be a list of lists of integers representing
+        DIMACS notation for the problem.
+
+        """
+
+        self.__dpll_calls += 1
+        if self.__backtracks > BACKTRACK_THRESHOLD:
+            logger.error(f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
+            return False, variables
+
+        logger.debug(
+            f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
+
+        if len(sigma) < 1:
+            logger.warning('SAT', sigma)
+            logger.debug([x for x in variables.keys() if variables[x] == True])
+            return True, variables
+        elif [] in sigma:
+            logger.warning('UNSAT')
+            return False, variables
+        # Simplify (tautologies, unit clauses, pure literals)
         else:
-            return res, var
+            old_sigma = [[]]
+            new_sigma = dcopy(sigma)
+            new_variables = dcopy(variables)
+            new_sigma = tautology(new_sigma)
+            new_sigma = self.assign_simplify(new_sigma, new_variables)
+            while self.diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
+                old_sigma = dcopy(new_sigma)
+                logger.debug("SIMPLIFY...")
+                new_sigma, new_variables = pure_literals(
+                    new_sigma, new_variables)
+                new_sigma, new_variables = unit_clause(
+                    new_sigma, new_variables)
+                new_sigma = self.assign_simplify(new_sigma, new_variables)
 
+            if len(new_sigma) < 1 or [] in sigma:
+                return self.dpll(new_sigma, new_variables)
 
-def diff_shape(a, b):
-    """Compare shape of two nested lists"""
-
-    shape_a = (len(a), len([y for x in a for y in x]))
-    shape_b = (len(a), len([y for x in b for y in x]))
-
-    if shape_a == shape_b:
-        return False
-    else:
-        return True
-
-
-def assign_simplify(sigma, values):
-    """Assigns values to an expression and simplifies
-    """
-
-    new_sigma = []
-
-    for clause in sigma:
-        new_clause = []
-        for lit in clause:
-            if lit in [True, False]:
-                if lit:
-                    new_clause.append(lit)
-            elif values[abs(lit)] is not None:
-                val = values[abs(lit)]
-                sign = 1 if lit > 0 else -1
-                lit_val = val if sign == 1 else (not val)
-                if lit_val:
-                    new_clause.append(lit_val)
+            # Split with recursive call if needed
+            sigma_pre_split = dcopy(new_sigma)
+            # Choose a predicate (randomly) from unassigned variables
+            predicate = choice(
+                [k for k in variables.keys() if variables[k] is None])
+            # Choose a value (randomly)
+            val = choice([True, False])
+            # Set predicate to value and recurse
+            new_variables[predicate] = val
+            new_sigma = self.assign_simplify(new_sigma, variables)
+            logger.info(f"SPLIT: {predicate} = {val}")
+            self.__splits += 1
+            res, var = self.dpll(new_sigma, new_variables)
+            if not res:
+                self.__backtracks += 1
+                logger.info(f"BACKTRACK: {predicate} = {not val}")
+                val = not val
+                variables[predicate] = val
+                new_sigma = self.assign_simplify(sigma_pre_split, variables)
+                return self.dpll(sigma_pre_split, variables)
             else:
-                new_clause.append(lit)
-        if new_clause.count(True) is 0:  # Keep only if clause contains no `True`
-            new_sigma.append(new_clause)
-    return new_sigma
+                return res, var
+
+    def diff_shape(self, a, b):
+        """Compare shape of two nested lists"""
+
+        shape_a = (len(a), len([y for x in a for y in x]))
+        shape_b = (len(a), len([y for x in b for y in x]))
+
+        if shape_a == shape_b:
+            return False
+        else:
+            return True
+
+    def assign_simplify(self, sigma, values):
+        """Assigns values to an expression and simplifies
+        """
+
+        new_sigma = []
+
+        for clause in sigma:
+            new_clause = []
+            for lit in clause:
+                if lit in [True, False]:
+                    if lit:
+                        new_clause.append(lit)
+                elif values[abs(lit)] is not None:
+                    val = values[abs(lit)]
+                    sign = 1 if lit > 0 else -1
+                    lit_val = val if sign == 1 else (not val)
+                    if lit_val:
+                        new_clause.append(lit_val)
+                else:
+                    new_clause.append(lit)
+            if new_clause.count(True) is 0:  # Keep only if clause contains no `True`
+                new_sigma.append(new_clause)
+        return new_sigma
 
 
 def verify_sat(sigma, end_values):
@@ -115,18 +146,3 @@ def verify_sat(sigma, end_values):
             logger.warning(f'Clause {i} untrue: {sigma[i]} -> {clause}')
             return False
     return True
-
-
-if __name__ == '__main__':
-    import rule_io
-    sigma = rule_io.read_rules(
-        'sudoku-rules.txt')
-    sigma2 = rule_io.read_rules('sudoku-example.txt')
-    sigma.extend(sigma2)
-    initial_sigma = copy.deepcopy(sigma)
-    collapsed = list(set([abs(y) for x in sigma for y in x]))
-    variables = {k: None for k in collapsed}
-    res, out_variables = dpll(sigma, variables)
-
-    # import ipdb; ipdb.set_trace()
-    logger.warning(verify_sat(sigma, out_variables))
