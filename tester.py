@@ -4,7 +4,15 @@ from algorithm import Solver, verify_sat
 from data_loader import read_data
 from rule_io import read_rules
 from loguru import logger
-logger.level('WARNING')
+import os
+
+LOGDIR = 'logs/'
+LOGLEVEL = 'INFO'
+
+# Configure logging to file
+if not os.path.exists(LOGDIR):
+    os.makedirs(LOGDIR)
+logger.add("logs/file_{time}.log", level=LOGLEVEL)
 
 
 def test_solver(fname='data/1000 sudokus.txt', n=50):
@@ -31,3 +39,7 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
             failcount += 1
         print(solver)
         print(f'Pass: {passcount}\tFail: {failcount}')
+
+if __name__ == '__main__':
+    print(f'Logging test results to log file...')
+    test_solver(n=1000)

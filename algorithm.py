@@ -59,7 +59,7 @@ class Solver(ABC):
 
         if len(sigma) < 1:
             logger.info('SAT', sigma)
-            logger.debug([x for x in variables.keys() if variables[x] == True])
+            logger.info([x for x in variables.keys() if variables[x] == True])
             return True, variables
         elif [] in sigma:
             logger.info('UNSAT')
@@ -92,12 +92,12 @@ class Solver(ABC):
             # Set predicate to value and recurse
             new_variables[predicate] = val
             new_sigma = self.assign_simplify(new_sigma, variables)
-            logger.info(f"SPLIT: {predicate} = {val}")
+            logger.debug(f"SPLIT: {predicate} = {val}")
             self.__splits += 1
             res, var = self.dpll(new_sigma, new_variables)
             if not res:
                 self.__backtracks += 1
-                logger.info(f"BACKTRACK: {predicate} = {not val}")
+                logger.debug(f"BACKTRACK: {predicate} = {not val}")
                 val = not val
                 variables[predicate] = val
                 new_sigma = self.assign_simplify(sigma_pre_split, variables)
