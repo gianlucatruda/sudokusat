@@ -3,8 +3,7 @@
 import rule_io
 import data_loader
 from simplifications import tautology, unit_clause, pure_literals
-from random import choice
-import copy
+from heuristics import random_split
 from copy import deepcopy as dcopy
 from loguru import logger
 from abc import ABC
@@ -18,7 +17,7 @@ class Solver(ABC):
     """General-purpose Satisfiability solver.
     """
 
-    def __init__(self, sigma: List[List[int]]):
+    def __init__(self, sigma: List[List[int]], split_heuristic=random_split):
         """Constructor for `Solver` class
 
         Parameters
@@ -31,6 +30,7 @@ class Solver(ABC):
 
         self.__sigma = dcopy(sigma)
         self.sigma = sigma
+        self.split_heuristic = split_heuristic
         collapsed = list(set([abs(y) for x in sigma for y in x]))
         self.variables = {k: None for k in collapsed}
         self.__splits = 0
@@ -101,24 +101,34 @@ class Solver(ABC):
             if len(new_sigma) < 1 or [] in sigma:
                 return self.__dpll(new_sigma, new_variables)
 
-            # Otherwise Split with recursive call
+            """SPLITTING------------------------------------------------
+            """
+
+            # Copy variables and expression to return to when backtracking
             sigma_pre_split = dcopy(new_sigma)
-            # Choose a predicate (randomly) from unassigned variables
-            predicate = choice(
-                [k for k in variables.keys() if variables[k] is None])
-            # Choose a value (randomly)
-            val = choice([True, False])
+            variables_pre_split = dcopy(new_variables)
+
+            # Choose predicate and value using a split heuristic function
+            # This function is defined separately and fed to the __init__ function.
+            predicate, val = self.split_heuristic(new_sigma, new_variables)
+
             # Set predicate to value and recurse
             new_variables[predicate] = val
-            new_sigma = self.__assign_simplify(new_sigma, variables)
+            new_sigma = self.__assign_simplify(new_sigma, new_variables)
             logger.debug(f"SPLIT: {predicate} = {val}")
             self.__splits += 1
             res, var = self.__dpll(new_sigma, new_variables)
             if not res:
                 self.__backtracks += 1
                 logger.debug(f"BACKTRACK: {predicate} = {not val}")
+
+                # Invert the value
                 val = not val
+                # Go back to the old variables and expression
+                variables = variables_pre_split
+                sigma = sigma_pre_split
                 variables[predicate] = val
+                # Simplify and recurse
                 new_sigma = self.__assign_simplify(sigma_pre_split, variables)
                 return self.__dpll(sigma_pre_split, variables)
             else:
