@@ -13,7 +13,6 @@ def dpll(sigma, variables):
     DIMACS notation for the problem.
 
     """
-    # logger.info(f'Sigma: {sigma}')
     logger.debug(
         f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
     # if len(sigma) < 10:
