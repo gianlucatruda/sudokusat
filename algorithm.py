@@ -2,7 +2,7 @@
 
 from simplifications import tautology, unit_clause, pure_literals
 from random import choice
-
+import copy
 
 def dpll(sigma, variables):
     """Apply DPLL algorithm to some expression `sigma`
@@ -11,32 +11,45 @@ def dpll(sigma, variables):
     DIMACS notation for the problem.
 
     """
+    print(f'Sigma: {sigma}')
+    # print(f'Empty clauses: {len([x for x in sigma if len(x) < 1])}')
     print(
         f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
-    # if expression is empty, then SAT
+    # if len(sigma) < 10:
+    #     out = assign_simplify(sigma, variables)
+    #     for i, clause in enumerate(out):
+    #         print(f'Clause: {sigma[i]} -> {clause}')
     if len(sigma) < 1:
-        print('SAT')
+        print('SAT', sigma)
         print([x for x in variables.keys() if variables[x] == True])
-        return variables
-    # if expression contains empty clause, UNSAT
-    elif sigma == [[]]:
+        return True, variables
+    elif [] in sigma:
         print('UNSAT')
-        return variables
+        return False, []
     # Simplify (tautologies, unit clauses, pure literals)
     else:
+        print("SIMPLIFY...")
+        # import pdb; pdb.set_trace()
         new_sigma = tautology(sigma)
-        new_sigma = assign_simplify(new_sigma, variables)
+        print(f'Taut: {new_sigma}')
+        # new_sigma = assign_simplify(new_sigma, variables)
+        # print(new_sigma)
         new_sigma, new_variables = pure_literals(new_sigma, variables)
-        new_sigma = assign_simplify(new_sigma, new_variables)
+        print(f'Pure: {new_sigma}')
+        # new_sigma = assign_simplify(new_sigma, new_variables)
+        # print(new_sigma)
         new_sigma, new_variables = unit_clause(new_sigma, new_variables)
+        print(f'Unit: {new_sigma}')
         new_sigma = assign_simplify(new_sigma, new_variables)
+        print(f'Assign: {new_sigma}')
 
     # TODO make a more robust check
     if diff_shape(new_sigma, sigma):
-        return dpll(new_sigma, new_variables)
+        return dpll(new_sigma, variables)
 
     # Split with recursive call if needed
     else:
+        sigma_pre_split = copy.deepcopy(new_sigma)
         # Choose a predicate (randomly) from unassigned variables
         predicate = choice([k for k in variables.keys() if variables[k] is None])
         # Choose a value (randomly)
@@ -45,8 +58,15 @@ def dpll(sigma, variables):
         variables[predicate] = val
         new_sigma = assign_simplify(new_sigma, variables)
         print(f"SPLIT: {predicate} = {val}")
-
-        return dpll(new_sigma, variables)
+        res, var = dpll(new_sigma, variables)
+        if not res:
+            print(f"BACKTRACK: {predicate} = {not val}")
+            val = not val
+            variables[predicate] = val
+            new_sigma = assign_simplify(sigma_pre_split, variables)
+            return dpll(sigma_pre_split, variables)
+        else:
+            return res, var
 
 
 def diff_shape(a, b):
@@ -71,17 +91,16 @@ def assign_simplify(sigma, values):
     for clause in sigma:
         new_clause = []
         for lit in clause:
-            # print(lit, clause)
             if lit in [True, False]:
-                new_clause.append(lit)
+                if lit: new_clause.append(lit)
             elif values[abs(lit)] is not None:
                 val = values[abs(lit)]
                 sign = 1 if lit > 0 else -1
                 lit_val = val if sign == 1 else (not val)
-                new_clause.append(lit_val)
+                if lit_val: new_clause.append(lit_val)
             else:
                 new_clause.append(lit)
-        if clause.count(True) is 0:  # Keep only if clause contains no `True`
+        if new_clause.count(True) is 0:  # Keep only if clause contains no `True`
             new_sigma.append(new_clause)
     return new_sigma
 
@@ -106,7 +125,7 @@ if __name__ == '__main__':
     initial_sigma = sigma
     collapsed = list(set([abs(y) for x in sigma for y in x]))
     print(collapsed)
-    import ipdb; ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
     variables = {k: None for k in collapsed}
-    out_variables = dpll(sigma, variables)
+    res, out_variables = dpll(sigma, variables)
     print(verify_sat(sigma, out_variables))
