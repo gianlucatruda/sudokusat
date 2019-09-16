@@ -36,6 +36,7 @@ class Solver(ABC):
         self.__splits = 0
         self.__backtracks = 0
         self.__dpll_calls = 0
+        self.__timedout = False
 
     def solve(self) -> bool:
         """Find whether the embedded PL expression is `SAT` or `UNSAT`
@@ -53,6 +54,17 @@ class Solver(ABC):
             logger.warning('UNSAT')
         return res
 
+    @property
+    def timedout(self) -> bool:
+        """Whether the solver timed out before reaching a conclusion.
+
+        Returns
+        -------
+        bool
+            `True` if a timeout was logged, else `False`
+        """
+        return self.__timedout
+
     def __dpll(self, sigma, variables) -> Tuple[bool, dict]:
         """Apply DPLL algorithm to some expression `sigma` and `variables`
 
@@ -65,6 +77,7 @@ class Solver(ABC):
         self.__dpll_calls += 1
         if self.__backtracks > BACKTRACK_THRESHOLD:
             logger.error(f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
+            self.__timedout = True
             return False, variables
 
         logger.debug(
@@ -89,7 +102,7 @@ class Solver(ABC):
 
             # Keep simplifying as long as you can
             while self.__diff_shape(old_sigma, new_sigma
-                ) and len(new_sigma) > 1 and [] not in new_sigma:
+                                    ) and len(new_sigma) > 1 and [] not in new_sigma:
                 old_sigma = dcopy(new_sigma)
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)

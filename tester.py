@@ -26,7 +26,7 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
     rules = read_rules('sudoku-rules.txt')
     sudokus = read_data('data/1000 sudokus.txt')
 
-    passcount, failcount = 0, 0
+    passcount, failcount, timeouts = 0, 0, 0
 
     for s in tqdm(sudokus[:n]):
         sigma = dcopy(rules)
@@ -35,14 +35,18 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
         solver = Solver(sigma)
         res = solver.solve()
         var = solver.variables
-        if (verify_sat(orig_sigma, var) == res):
+        if solver.timedout:
+            timeouts += 1
+        elif (verify_sat(orig_sigma, var) == res):
             passcount += 1
         else:
             failcount += 1
         logger.warning(solver)
-        logger.warning(f'Pass: {passcount}\tFail: {failcount}')
+        logger.warning(
+            f'Pass: {passcount}\tFail: {failcount}\tTimeout: {timeouts}')
 
-    logger.warning(f'Pass: {passcount}\tFail: {failcount}')
+    logger.warning(
+        f'Pass: {passcount}\tFail: {failcount}\tTimeout: {timeouts}')
 
 
 if __name__ == '__main__':
