@@ -8,15 +8,27 @@ import copy
 from copy import deepcopy as dcopy
 from loguru import logger
 from abc import ABC
-from typing import List
+from typing import List, Tuple
 
 
 BACKTRACK_THRESHOLD = 100  # How many backtracks before timeing out
 
 
 class Solver(ABC):
+    """General-purpose Satisfiability solver.
+    """
 
-    def __init__(self, sigma: List):
+    def __init__(self, sigma: List[List[int]]):
+        """Constructor for `Solver` class
+
+        Parameters
+        ----------
+        sigma : List[List[int]]
+            A PL expression in DIMACS encoding.
+            The literals are integers (+ for True, - for False).
+            The clauses are lists of those integers.
+        """
+
         self.__sigma = dcopy(sigma)
         self.sigma = sigma
         collapsed = list(set([abs(y) for x in sigma for y in x]))
@@ -25,28 +37,29 @@ class Solver(ABC):
         self.__backtracks = 0
         self.__dpll_calls = 0
 
-    def solve(self):
-        res, self.variables = self.dpll(self.sigma, self.variables)
+    def solve(self) -> bool:
+        """Find whether the embedded PL expression is `SAT` or `UNSAT`
+
+        Returns
+        -------
+        bool
+            `True` if satisfiable, else `False`.
+            (Note: will also be `False` in case of timeout.)
+        """
+        res, self.variables = self.__dpll(self.sigma, self.variables)
         if res:
             logger.warning('SAT')
         else:
             logger.warning('UNSAT')
         return res
 
-    def __repr__(self):
+    def __dpll(self, sigma, variables) -> Tuple[bool, dict]:
+        """Apply DPLL algorithm to some expression `sigma` and `variables`
 
-        return "<algorithm.Solver metrics={}".format({
-            'splits': self.__splits,
-            'backtracks': self.__backtracks,
-            'calls:': self.__dpll_calls
-        })
-
-    def dpll(self, sigma, variables):
-        """Apply DPLL algorithm to some expression `sigma`
-
-        sigma must be a list of lists of integers representing
-        DIMACS notation for the problem.
-
+        Returns
+        -------
+        Tuple
+            The satisfiability of the expression, the variable values.
         """
 
         self.__dpll_calls += 1
@@ -70,17 +83,17 @@ class Solver(ABC):
             new_sigma = dcopy(sigma)
             new_variables = dcopy(variables)
             new_sigma = tautology(new_sigma)
-            new_sigma = self.assign_simplify(new_sigma, new_variables)
-            while self.diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
+            new_sigma = self.__assign_simplify(new_sigma, new_variables)
+            while self.__diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
                 old_sigma = dcopy(new_sigma)
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)
                 new_sigma, new_variables = unit_clause(
                     new_sigma, new_variables)
-                new_sigma = self.assign_simplify(new_sigma, new_variables)
+                new_sigma = self.__assign_simplify(new_sigma, new_variables)
 
             if len(new_sigma) < 1 or [] in sigma:
-                return self.dpll(new_sigma, new_variables)
+                return self.__dpll(new_sigma, new_variables)
 
             # Split with recursive call if needed
             sigma_pre_split = dcopy(new_sigma)
@@ -91,22 +104,38 @@ class Solver(ABC):
             val = choice([True, False])
             # Set predicate to value and recurse
             new_variables[predicate] = val
-            new_sigma = self.assign_simplify(new_sigma, variables)
+            new_sigma = self.__assign_simplify(new_sigma, variables)
             logger.debug(f"SPLIT: {predicate} = {val}")
             self.__splits += 1
-            res, var = self.dpll(new_sigma, new_variables)
+            res, var = self.__dpll(new_sigma, new_variables)
             if not res:
                 self.__backtracks += 1
                 logger.debug(f"BACKTRACK: {predicate} = {not val}")
                 val = not val
                 variables[predicate] = val
-                new_sigma = self.assign_simplify(sigma_pre_split, variables)
-                return self.dpll(sigma_pre_split, variables)
+                new_sigma = self.__assign_simplify(sigma_pre_split, variables)
+                return self.__dpll(sigma_pre_split, variables)
             else:
                 return res, var
 
-    def diff_shape(self, a, b):
-        """Compare shape of two nested lists"""
+    def __diff_shape(self, a: List[List], b: List[List]) -> bool:
+        """Compare shape of two nested lists
+
+        This is useful for determining if simplifications have
+        worked effectively.
+
+        Parameters
+        ----------
+        a : List[List]
+            A list of lists
+        b : List[List]
+            A list of lists
+
+        Returns
+        -------
+        bool
+            `True` if the lists have different shapes, else `False`
+        """
 
         shape_a = (len(a), len([y for x in a for y in x]))
         shape_b = (len(a), len([y for x in b for y in x]))
@@ -116,8 +145,21 @@ class Solver(ABC):
         else:
             return True
 
-    def assign_simplify(self, sigma, values):
-        """Assigns values to an expression and simplifies
+    def __assign_simplify(self, sigma: List[List], values: dict) -> List[List]:
+        """Fill the values into the expression and simplify
+
+        Parameters
+        ----------
+        sigma : List[List]
+            A PL expression to assign values to and simplify.
+        values : dict
+            A dictionary lookup of the literal name and the value to
+            use during assignment.
+
+        Returns
+        -------
+        List[List]
+            A nested list of `int` or `bool` literals similar to `sigma`
         """
 
         new_sigma = []
@@ -140,9 +182,31 @@ class Solver(ABC):
                 new_sigma.append(new_clause)
         return new_sigma
 
+    def __repr__(self):
+        """String formatting for the class
+        """
+        return "<algorithm.Solver metrics={}".format({
+            'splits': self.__splits,
+            'backtracks': self.__backtracks,
+            'calls:': self.__dpll_calls
+        })
 
-def verify_sat(sigma, end_values):
+
+def verify_sat(sigma: List[List], end_values: dict) -> bool:
     """Verifies that found values satisfy expression
+
+    Parameters
+    ----------
+    sigma : List[List]
+        A PL expression to assign values to and simplify.
+    end_values : dict
+        A dictionary lookup of the literal name and the value to
+        use during assignment.
+
+    Returns
+    -------
+    bool
+        `True` if the values satisfy the expression, else `False`
     """
     new_sigma = []
     for clause in sigma:

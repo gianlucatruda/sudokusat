@@ -1,9 +1,25 @@
 """Implementations of DPLL simplification rules"""
 
-import copy
+from copy import deepcopy as dcopy
+from typing import List, Tuple
 
-def tautology(sigma):
-    """Detects and removes tautologies"""
+
+def tautology(sigma: List[List]) -> List[List]:
+    """Detects and removes tautologies
+
+    Parameters
+    ----------
+    sigma : List[List]
+        A PL expression in DIMACS encoding.
+        The literals are integers (+ for True, - for False) or booleans,
+        as they are gradually replaced by their values.
+        The clauses are lists of those integers or booleans.
+
+    Returns
+    -------
+    List[List]
+        A nested list of `int` or `bool` literals similar to `sigma`
+    """
     new_sigma = []
     for clause in sigma:
         new_clause = clause
@@ -17,9 +33,26 @@ def tautology(sigma):
     return new_sigma
 
 
-def unit_clause(sigma, variables):
-    """Assigns unit clauses to True and removes"""
-    new_variables = copy.deepcopy(variables)
+def unit_clause(sigma: List[List], variables: dict) -> Tuple:
+    """Assigns unit clauses to `True` and removes them
+
+    Parameters
+    ----------
+    sigma : List[List]
+        A PL expression in DIMACS encoding.
+        The literals are integers (+ for True, - for False) or booleans,
+        as they are gradually replaced by their values.
+        The clauses are lists of those integers or booleans.
+    values : dict
+        A dictionary lookup of the literal name and the value.
+
+    Returns
+    -------
+    Tuple
+        A nested list of `int` or `bool` literals similar to `sigma`
+        and an updated copy of the `variables` dictionary.
+    """
+    new_variables = dcopy(variables)
     new_sigma = []
     for clause in sigma:
         new_clause = clause
@@ -37,11 +70,27 @@ def unit_clause(sigma, variables):
     return new_sigma, new_variables
 
 
-def pure_literals(sigma, variables):
-    """Sets pure literals to corresponding value
+def pure_literals(sigma: List[List], variables: dict) -> Tuple:
+    """Sets pure literals to their corresponding value
+
+    Parameters
+    ----------
+    sigma : List[List]
+        A PL expression in DIMACS encoding.
+        The literals are integers (+ for True, - for False) or booleans,
+        as they are gradually replaced by their values.
+        The clauses are lists of those integers or booleans.
+    values : dict
+        A dictionary lookup of the literal name and the value.
+
+    Returns
+    -------
+    Tuple
+        A nested list of `int` or `bool` literals similar to `sigma`
+        and an updated copy of the `variables` dictionary.
     """
-    new_sigma = copy.deepcopy(sigma)
-    new_variables = copy.deepcopy(variables)
+    new_sigma = dcopy(sigma)
+    new_variables = dcopy(variables)
     literals = list(set([y for x in sigma for y in x]))
     bools = [True, False]
     pos = [x for x in literals if x > 0 and x not in bools]

@@ -1,3 +1,5 @@
+"""Simple testing kit to verify if solver works correctly"""
+
 from tqdm import tqdm
 from copy import deepcopy as dcopy
 from algorithm import Solver, verify_sat
@@ -37,8 +39,11 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
             passcount += 1
         else:
             failcount += 1
-        print(solver)
-        print(f'Pass: {passcount}\tFail: {failcount}')
+        logger.warning(solver)
+        logger.warning(f'Pass: {passcount}\tFail: {failcount}')
+
+    logger.warning(f'Pass: {passcount}\tFail: {failcount}')
+
 
 if __name__ == '__main__':
     print(f'Logging test results to log file...')
