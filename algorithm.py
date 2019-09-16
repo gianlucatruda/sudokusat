@@ -15,10 +15,7 @@ def dpll(sigma, variables):
     """
     logger.debug(
         f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
-    # if len(sigma) < 10:
-    #     out = assign_simplify(sigma, variables)
-    #     for i, clause in enumerate(out):
-    #         logger.info(f'Clause: {sigma[i]} -> {clause}')
+
     if len(sigma) < 1:
         logger.warning('SAT', sigma)
         logger.debug([x for x in variables.keys() if variables[x] == True])
