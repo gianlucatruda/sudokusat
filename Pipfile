@@ -10,6 +10,7 @@ argparse = "*"
 
 [dev-packages]
 pipreqs = "*"
+ipdb = "*"
 
 [requires]
 python_version = "3.6"
