@@ -48,7 +48,7 @@ def pure_literals(sigma, variables):
     neg = [x for x in literals if x < 0 and x not in bools]
     pures = [x for x in pos if (-1 * x) not in neg]
     pures.extend([x for x in neg if (-1 * x) not in pos])
-    print(f'Pures: {pures}')
+    # print(f'Pures: {pures}')
     for p in pures:
         old_val = new_variables[abs(p)]
         new_val = True if p > 0 else False
