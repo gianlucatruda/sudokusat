@@ -11,8 +11,7 @@ def dpll(sigma, variables):
     DIMACS notation for the problem.
 
     """
-    print(f'Sigma: {sigma}')
-    # print(f'Empty clauses: {len([x for x in sigma if len(x) < 1])}')
+    # print(f'Sigma: {sigma}')
     print(
         f'DPLL: {len(sigma)} {len([x for x in list(variables.values()) if x is None])}')
     # if len(sigma) < 10:
@@ -25,40 +24,41 @@ def dpll(sigma, variables):
         return True, variables
     elif [] in sigma:
         print('UNSAT')
-        return False, []
+        return False, variables
     # Simplify (tautologies, unit clauses, pure literals)
     else:
-        print("SIMPLIFY...")
-        # import pdb; pdb.set_trace()
-        new_sigma = tautology(sigma)
-        print(f'Taut: {new_sigma}')
-        # new_sigma = assign_simplify(new_sigma, variables)
-        # print(new_sigma)
-        new_sigma, new_variables = pure_literals(new_sigma, variables)
-        print(f'Pure: {new_sigma}')
-        # new_sigma = assign_simplify(new_sigma, new_variables)
-        # print(new_sigma)
-        new_sigma, new_variables = unit_clause(new_sigma, new_variables)
-        print(f'Unit: {new_sigma}')
+        old_sigma = [[]]
+        new_sigma = copy.deepcopy(sigma)
+        new_variables = copy.deepcopy(variables)
+        new_sigma = tautology(new_sigma)
         new_sigma = assign_simplify(new_sigma, new_variables)
-        print(f'Assign: {new_sigma}')
+        while diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
+            old_sigma = copy.deepcopy(new_sigma)
+            print("SIMPLIFY...")
+            # import pdb; pdb.set_trace()
+            new_sigma, new_variables = pure_literals(new_sigma, new_variables)
+            # print(f'Pure: {new_sigma}')
+            # new_sigma = assign_simplify(new_sigma, new_variables)
+            # print(new_sigma)
+            new_sigma, new_variables = unit_clause(new_sigma, new_variables)
+            # print(f'Unit: {new_sigma}')
+            new_sigma = assign_simplify(new_sigma, new_variables)
+            # print(f'Assign: {new_sigma}')
 
-    # TODO make a more robust check
-    if diff_shape(new_sigma, sigma):
-        return dpll(new_sigma, variables)
+        if len(new_sigma) < 1 or [] in sigma:
+            return dpll(new_sigma, new_variables)
 
-    # Split with recursive call if needed
-    else:
+        # Split with recursive call if needed
         sigma_pre_split = copy.deepcopy(new_sigma)
         # Choose a predicate (randomly) from unassigned variables
         predicate = choice([k for k in variables.keys() if variables[k] is None])
         # Choose a value (randomly)
         val = choice([True, False])
         # Set predicate to value and recurse
-        variables[predicate] = val
+        new_variables[predicate] = val
         new_sigma = assign_simplify(new_sigma, variables)
         print(f"SPLIT: {predicate} = {val}")
-        res, var = dpll(new_sigma, variables)
+        res, var = dpll(new_sigma, new_variables)
         if not res:
             print(f"BACKTRACK: {predicate} = {not val}")
             val = not val
@@ -108,8 +108,15 @@ def assign_simplify(sigma, values):
 def verify_sat(sigma, end_values):
     """Verifies that found values satisfy expression
     """
-    out = assign_simplify(sigma, end_values)
-    for i, clause in enumerate(out):
+    new_sigma = []
+    for clause in sigma:
+        new_clause = []
+        for lit in clause:
+            val = end_values[abs(lit)]
+            if val is not None:
+                new_clause.append(val)
+
+    for i, clause in enumerate(new_sigma):
         if not any(clause):
             print(f'Clause {i} untrue: {sigma[i]} -> {clause}')
             return False
@@ -122,10 +129,11 @@ if __name__ == '__main__':
         'sudoku-rules.txt')
     sigma2 = rule_io.read_rules('sudoku-example.txt')
     sigma.extend(sigma2)
-    initial_sigma = sigma
+    sigma.extend([[-318, -419]])
+    initial_sigma = copy.deepcopy(sigma)
     collapsed = list(set([abs(y) for x in sigma for y in x]))
-    print(collapsed)
-    # import ipdb; ipdb.set_trace()
     variables = {k: None for k in collapsed}
     res, out_variables = dpll(sigma, variables)
+
+    # import ipdb; ipdb.set_trace()
     print(verify_sat(sigma, out_variables))
