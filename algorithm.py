@@ -70,10 +70,12 @@ class Solver(ABC):
         logger.debug(
             f'DPLL | Clauses: {len(sigma)}\tUndefined: {len([x for x in list(variables.values()) if x is None])}')
 
+        # Return SAT if the expression is empty
         if len(sigma) < 1:
             logger.info('SAT', sigma)
             logger.info([x for x in variables.keys() if variables[x] == True])
             return True, variables
+        # Return UNSAT if the expression contains empty clause
         elif [] in sigma:
             logger.info('UNSAT')
             return False, variables
@@ -84,7 +86,10 @@ class Solver(ABC):
             new_variables = dcopy(variables)
             new_sigma = tautology(new_sigma)
             new_sigma = self.__assign_simplify(new_sigma, new_variables)
-            while self.__diff_shape(old_sigma, new_sigma) and len(new_sigma) > 1 and [] not in new_sigma:
+
+            # Keep simplifying as long as you can
+            while self.__diff_shape(old_sigma, new_sigma
+                ) and len(new_sigma) > 1 and [] not in new_sigma:
                 old_sigma = dcopy(new_sigma)
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)
@@ -92,10 +97,11 @@ class Solver(ABC):
                     new_sigma, new_variables)
                 new_sigma = self.__assign_simplify(new_sigma, new_variables)
 
+            # Check if we now fulfill the criteria for SAT or UNSAT
             if len(new_sigma) < 1 or [] in sigma:
                 return self.__dpll(new_sigma, new_variables)
 
-            # Split with recursive call if needed
+            # Otherwise Split with recursive call
             sigma_pre_split = dcopy(new_sigma)
             # Choose a predicate (randomly) from unassigned variables
             predicate = choice(
