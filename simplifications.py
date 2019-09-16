@@ -27,9 +27,9 @@ def unit_clause(sigma, variables):
         else:
             unit = clause[0]
             if unit < 0:
-                variables[unit] = False  # TODO should we mutate `variables`?
+                variables[abs(unit)] = False  # TODO should we mutate `variables`?
             else:
-                variables[unit] = True
+                variables[abs(unit)] = True
     return new_sigma, variables
 
 
@@ -46,8 +46,8 @@ def pure_literals(sigma, variables):
     # TODO ensure this concurs with theory
     for p in pures:
         if p > 0:
-            variables[p] = True
+            variables[abs(p)] = True
         else:
-            variables[p] = False
+            variables[abs(p)] = False
 
     return sigma, variables
