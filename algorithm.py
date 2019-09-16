@@ -27,6 +27,10 @@ class Solver(ABC):
 
     def solve(self):
         res, self.variables = self.dpll(self.sigma, self.variables)
+        if res:
+            logger.warning('SAT')
+        else:
+            logger.warning('UNSAT')
         return res
 
     def __repr__(self):
@@ -54,11 +58,11 @@ class Solver(ABC):
             f'DPLL | Clauses: {len(sigma)}\tUndefined: {len([x for x in list(variables.values()) if x is None])}')
 
         if len(sigma) < 1:
-            logger.warning('SAT', sigma)
+            logger.info('SAT', sigma)
             logger.debug([x for x in variables.keys() if variables[x] == True])
             return True, variables
         elif [] in sigma:
-            logger.warning('UNSAT')
+            logger.info('UNSAT')
             return False, variables
         # Simplify (tautologies, unit clauses, pure literals)
         else:
@@ -146,10 +150,12 @@ def verify_sat(sigma, end_values):
         for lit in clause:
             val = end_values[abs(lit)]
             if val is not None:
-                new_clause.append(val)
-
+                new_clause.append(
+                    val) if lit > 0 else new_clause.append(not val)
+        new_sigma.append(new_clause)
+    assert(len(new_sigma) == len(sigma))
     for i, clause in enumerate(new_sigma):
         if not any(clause):
-            logger.warning(f'Clause {i} untrue: {sigma[i]} -> {clause}')
+            logger.error(f'Clause {i} untrue: {sigma[i]} -> {clause}')
             return False
     return True
