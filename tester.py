@@ -29,24 +29,28 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
     passcount, failcount, timeouts = 0, 0, 0
 
     for s in tqdm(sudokus[:n]):
-        sigma = dcopy(rules)
-        sigma.extend(s)
-        orig_sigma = dcopy(sigma)
-        solver = Solver(sigma)
-        res = solver.solve()
-        var = solver.variables
-        if solver.timedout:
-            timeouts += 1
-        elif (verify_sat(orig_sigma, var) == res):
-            passcount += 1
-        else:
+        try:
+            sigma = dcopy(rules)
+            sigma.extend(s)
+            orig_sigma = dcopy(sigma)
+            solver = Solver(sigma)
+            res = solver.solve()
+            var = solver.variables
+            if solver.timedout:
+                timeouts += 1
+            elif (verify_sat(orig_sigma, var) == res):
+                passcount += 1
+            else:
+                failcount += 1
+            logger.warning(solver)
+        except Exception as e:
+            logger.error(e)
             failcount += 1
-        logger.warning(solver)
-        logger.warning(
-            f'Pass: {passcount}\tFail: {failcount}\tTimeout: {timeouts}')
+        finally:
+            status_update = f'Pass: {passcount} Fail: {failcount} Timeout: {timeouts}'
+            logger.warning(status_update)
 
-    logger.warning(
-        f'Pass: {passcount}\tFail: {failcount}\tTimeout: {timeouts}')
+    logger.warning(status_update)
 
 
 if __name__ == '__main__':
