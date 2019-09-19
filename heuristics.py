@@ -26,3 +26,48 @@ def random_split(sigma: List[List], variables: dict) -> Tuple:
     val = choice([True, False])
 
     return predicate, val
+
+
+# TODO implement
+def splitting_heuristic_01(sigma: List[List], variables: dict) -> Tuple:
+    """[Description]
+
+    Parameters
+    ----------
+    sigma : List[List]
+        A PL expression in DIMACS format.
+    variables : dict
+        The literal names and current values as a dictionary.
+
+    Returns
+    -------
+    Tuple
+        The selected `predicate` and the selected `value`
+    """
+
+    predicate, val = 0, 0
+
+    return predicate, val
+
+# TODO implement
+
+
+def splitting_heuristic_02(sigma: List[List], variables: dict) -> Tuple:
+    """[Description]
+
+    Parameters
+    ----------
+    sigma : List[List]
+        A PL expression in DIMACS format.
+    variables : dict
+        The literal names and current values as a dictionary.
+
+    Returns
+    -------
+    Tuple
+        The selected `predicate` and the selected `value`
+    """
+
+    predicate, val = 0, 0
+
+    return predicate, val

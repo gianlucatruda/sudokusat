@@ -16,11 +16,15 @@ if __name__ == '__main__':
                         required=False, choices=[1, 2, 3], default=1,
                         help='Specify which heuristic strategy to use.')
 
+    # TODO add argument for specifying timeout threshold
+    # TODO add argument for specifying output files
+
     args = parser.parse_args()
     infile = pathlib.Path(args.input_file[0])
     if not os.path.exists(infile):
         raise FileExistsError(f"Could not locate '{infile}'")
 
+    # TODO connect strategy param to heuristics
 
     sigma = read_rules(infile)
     solver = Solver(sigma)
