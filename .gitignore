@@ -129,3 +129,9 @@ venv.bak/
 
 # Zip files (typically for large data)
 *.zip
+
+# data directory (houses test cases)
+data/*
+
+# vscode config directory
+.vscode/*
