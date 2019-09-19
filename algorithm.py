@@ -37,6 +37,7 @@ class Solver(ABC):
         self.__backtracks = 0
         self.__dpll_calls = 0
         self.__timedout = False
+        self.__conclusion = None
 
     def solve(self) -> bool:
         """Find whether the embedded PL expression is `SAT` or `UNSAT`
@@ -50,9 +51,22 @@ class Solver(ABC):
         res, self.variables = self.__dpll(self.sigma, self.variables)
         if res:
             logger.warning('SAT')
+            self.__conclusion = 'SAT'
         else:
             logger.warning('UNSAT')
+            self.__conclusion = 'UNSAT'
         return res
+
+    @property
+    def performance(self) -> dict:
+        """Returns performance statistics"""
+        return {
+            'calls': self.__dpll_calls,
+            'splits': self.__splits,
+            'backtracks': self.__backtracks,
+            'conclusion': 'TIMEOUT' if self.__timedout else self.__conclusion,
+
+        }
 
     @property
     def timedout(self) -> bool:
