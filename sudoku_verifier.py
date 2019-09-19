@@ -41,3 +41,12 @@ def is_valid(variables, sudoku_sigma, shape=(9, 9)):
                 return False
 
     return True
+
+
+def build_grid(variables, shape=(9,9)):
+    """Builds a visual representation of the sudoku solution"""
+
+    truths = [x for x in variables if variables[x] is True]
+    grid = np.array([x % 10 for x in sorted(truths)]).reshape(shape)
+
+    return grid
