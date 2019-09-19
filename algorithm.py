@@ -65,6 +65,18 @@ class Solver(ABC):
         """
         return self.__timedout
 
+    @property
+    def unknowns(self) -> int:
+        """Returns a count of the variables with unknown values.
+
+        Returns
+        -------
+        int
+            The number of undetermined variables (not True or False).
+        """
+
+        return len([v for v in self.variables.keys() if self.variables[v] is None])
+
     def __dpll(self, sigma, variables) -> Tuple[bool, dict]:
         """Apply DPLL algorithm to some expression `sigma` and `variables`
 
@@ -110,8 +122,10 @@ class Solver(ABC):
                     new_sigma, new_variables)
                 new_sigma = self.__assign_simplify(new_sigma, new_variables)
 
+            self.variables = new_variables
+
             # Check if we now fulfill the criteria for SAT or UNSAT
-            if len(new_sigma) < 1 or [] in sigma:
+            if len(new_sigma) < 1 or [] in sigma or self.unknowns < 1:
                 return self.__dpll(new_sigma, new_variables)
 
             """SPLITTING------------------------------------------------
