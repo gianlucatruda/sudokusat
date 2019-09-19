@@ -2,6 +2,7 @@
 
 from tqdm import tqdm
 from copy import deepcopy as dcopy
+from sudoku_verifier import is_valid
 from algorithm import Solver, verify_sat
 from data_loader import read_data
 from rule_io import read_rules
@@ -38,7 +39,8 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
             var = solver.variables
             if solver.timedout:
                 timeouts += 1
-            elif (verify_sat(orig_sigma, var) == res):
+            # If the SAT solution is viable AND it's a correct sudoku
+            elif (verify_sat(orig_sigma, var) == res) and is_valid(var, s):
                 passcount += 1
             else:
                 failcount += 1
