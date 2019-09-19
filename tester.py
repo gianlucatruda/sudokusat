@@ -9,6 +9,9 @@ from rule_io import read_rules
 from loguru import logger
 import pandas as pd
 import os
+from datetime import datetime
+import sys
+
 
 LOGDIR = 'logs/'
 LOGLEVEL = 'INFO'
@@ -19,20 +22,22 @@ if not os.path.exists(LOGDIR):
 logger.add("logs/file_{time}.log", level=LOGLEVEL)
 
 
-def test_solver(fname='data/1000 sudokus.txt', n=50, return_dataframe=False):
+def test_solver(fname='data/1000 sudokus.txt', n=None, return_dataframe=False):
     """Tests the SAT Solver on `n` sudokus from `fname`
     """
 
     # Create array to store performance stats
     stats = []
 
-    logger.warning(f"Testing solver on first {n} sudokus in {fname}:\n\n")
-
     rules = read_rules('sudoku-rules.txt')
-    sudokus = read_data('data/1000 sudokus.txt')
+    sudokus = read_data(fname)
 
     passcount, failcount, timeouts = 0, 0, 0
 
+    if n is None:
+        n = len(sudokus)
+
+    logger.warning(f"Testing solver on first {n} sudokus in {fname}:\n\n")
     for s in tqdm(sudokus[:n]):
         perf = {'puzzle': s, 'correct': False}
         try:
@@ -69,9 +74,21 @@ def test_solver(fname='data/1000 sudokus.txt', n=50, return_dataframe=False):
     if return_dataframe:
         return pd.DataFrame(stats)
 
+
 if __name__ == '__main__':
-    print(f'Logging test results to log file...')
-    df = test_solver(n=1000, return_dataframe=True)
+    args = sys.argv
+    if len(args) != 2:
+        print('Pass in the filename as an argument!')
+        sys.exit(1)
+    fname = args[1]
+    df = test_solver(fname=fname, return_dataframe=True)
     print(df.describe())
 
-    df.to_csv('results.csv')
+    # Save results to custom csv file
+    now = datetime.now().strftime("%m-%d-%H_%M_%S")
+    path = f'results/{fname}'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    outname = f'{path}/{now}_results.csv'
+    df.to_csv(outname)
+    print(f'Results saved to {outname}')
