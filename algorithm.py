@@ -125,7 +125,7 @@ class Solver(ABC):
             self.variables = new_variables
 
             # Check if we now fulfill the criteria for SAT or UNSAT
-            if len(new_sigma) < 1 or [] in sigma or self.unknowns < 1:
+            if len(new_sigma) < 1 or [] in new_sigma or self.unknowns < 1:
                 return self.__dpll(new_sigma, new_variables)
 
             """SPLITTING------------------------------------------------

@@ -65,14 +65,13 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
     new_sigma = dcopy(sigma)
     new_sigma.sort(key=lambda arr: len(arr))
     minsize = len(new_sigma[0])
-    min_clauses = [x for x in sigma if len(x) == minsize]
+    min_clauses = [x for x in new_sigma if len(x) == minsize]
     min_lits = [y for x in min_clauses for y in x]
 
     # Step 2 : Find the literal with maximum occurrence (positive or negative)
     momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
     predicate = abs(max(momified, key=momified.get))
 
-    print(momified)
     # Step 3: When the highest ranked variable is found, it is instantiated
     # to true if the variable appears in more smallest clauses as a
     # positive literal and to false otherwise.

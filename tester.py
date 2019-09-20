@@ -4,6 +4,7 @@ from tqdm import tqdm
 from copy import deepcopy as dcopy
 from sudoku_verifier import is_valid
 from algorithm import Solver, verify_sat
+from heuristics import random_split, moms_split, jeroslow_wang_split
 from data_loader import read_data
 from rule_io import read_rules
 from loguru import logger
@@ -34,7 +35,7 @@ def test_solver(fname='data/1000 sudokus.txt', n=50):
             sigma = dcopy(rules)
             sigma.extend(s)
             orig_sigma = dcopy(sigma)
-            solver = Solver(sigma)
+            solver = Solver(sigma, split_heuristic=moms_split)
             res = solver.solve()
             var = solver.variables
             if solver.timedout:
