@@ -10,7 +10,7 @@ from abc import ABC
 from typing import List, Tuple
 
 
-BACKTRACK_THRESHOLD = 100  # How many backtracks before timeing out
+BACKTRACK_THRESHOLD = 400  # How many backtracks before timing out
 
 
 class Solver(ABC):
@@ -103,12 +103,15 @@ class Solver(ABC):
 
         self.__dpll_calls += 1
         if self.__backtracks > BACKTRACK_THRESHOLD:
-            logger.error(f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
-            self.__timedout = True
+            if not self.__timedout:
+                logger.error(
+                    f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
+                self.__timedout = True
             return False, variables
 
         logger.debug(
-            f'DPLL | Clauses: {len(sigma)}\tUndefined: {len([x for x in list(variables.values()) if x is None])}')
+            f'DPLL | Clauses: {len(sigma)}\tUndefined: \
+                {len([x for x in list(variables.values()) if x is None])}')
 
         # Return SAT if the expression is empty
         if len(sigma) < 1:
