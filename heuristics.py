@@ -50,24 +50,34 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    # Step 1 : Find Clause with Minimum Size
+    def __mom_func(lit, clause, k=2):
+        _lit = abs(lit)
+        count_lit = clause.count(_lit)
+        count_not_lit = clause.count(-1*_lit)
+        return (count_lit + count_not_lit) * 2**k + \
+            (count_lit * count_not_lit)
+
+    def __pos_neg_occurences(lit, literals):
+        _lit = abs(lit)
+        return literals.count(lit), literals.count(-1*lit)
+
+    # Step 1 : Find Clauses with Minimum Size
     new_sigma = dcopy(sigma)
     new_sigma.sort(key=lambda arr: len(arr))
-    min_size_clause = new_sigma[0]
+    minsize = len(new_sigma[0])
+    min_clauses = [x for x in sigma if len(x) == minsize]
+    min_lits = [y for x in min_clauses for y in x]
 
     # Step 2 : Find the literal with maximum occurrence (positive or negative)
-    # All literals are set to negative and added to min_size_clause -->
-    # detect total occurrence (negative and positive) of literals
-    for literal in min_size_clause:
-        neg_lit = -1 * literal
-        min_size_clause.append(neg_lit)
-        # max. total occurrence of a literal gets selected
-        lit_max_occurrence = Counter(min_size_clause).sort()
-    predicate = next(iter(lit_max_occurrence))
+    momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
+    predicate = abs(max(momified, key=momified.get))
 
-    # TODO re-evaluate this
-    # Choose a value (randomly)
-    val = choice([True, False])
+    print(momified)
+    # Step 3: When the highest ranked variable is found, it is instantiated
+    # to true if the variable appears in more smallest clauses as a
+    # positive literal and to false otherwise.
+    pos_count, neg_count = __pos_neg_occurences(predicate, min_lits)
+    val = True if pos_count > neg_count else False
 
     return predicate, val
 
