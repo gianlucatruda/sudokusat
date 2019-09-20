@@ -16,11 +16,6 @@ import sys
 LOGDIR = 'logs/'
 LOGLEVEL = 'INFO'
 
-# Configure logging to file
-if not os.path.exists(LOGDIR):
-    os.makedirs(LOGDIR)
-logger.add("logs/file_{time}.log", level=LOGLEVEL)
-
 
 def test_solver(fname='data/1000 sudokus.txt', n=None, return_dataframe=False):
     """Tests the SAT Solver on `n` sudokus from `fname`
@@ -76,6 +71,16 @@ def test_solver(fname='data/1000 sudokus.txt', n=None, return_dataframe=False):
 
 
 if __name__ == '__main__':
+
+    # Configure logging to stderr
+    logger.remove()
+    logger.add(sys.stderr, level="WARNING")
+
+    # Configure logging to file
+    if not os.path.exists(LOGDIR):
+        os.makedirs(LOGDIR)
+    logger.add("logs/file_{time}.log", level=LOGLEVEL)
+
     args = sys.argv
     if len(args) != 2:
         print('Pass in the filename as an argument!')
