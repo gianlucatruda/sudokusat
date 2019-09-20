@@ -33,6 +33,7 @@ class Solver(ABC):
         self.split_heuristic = split_heuristic
         collapsed = list(set([abs(y) for x in sigma for y in x]))
         self.variables = {k: None for k in collapsed}
+        self.__simplifications = 0
         self.__splits = 0
         self.__backtracks = 0
         self.__dpll_calls = 0
@@ -61,11 +62,11 @@ class Solver(ABC):
     def performance(self) -> dict:
         """Returns performance statistics"""
         return {
+            'simplifications': self.__simplifications,
             'calls': self.__dpll_calls,
             'splits': self.__splits,
             'backtracks': self.__backtracks,
             'conclusion': 'TIMEOUT' if self.__timedout else self.__conclusion,
-
         }
 
     @property
@@ -127,8 +128,11 @@ class Solver(ABC):
             new_sigma = self.__assign_simplify(new_sigma, new_variables)
 
             # Keep simplifying as long as you can
-            while self.__diff_shape(old_sigma, new_sigma
-                                    ) and len(new_sigma) > 1 and [] not in new_sigma:
+            while self.__diff_shape(old_sigma, new_sigma) and (
+                    len(new_sigma) > 1) and (
+                    [] not in new_sigma):
+
+                self.__simplifications += 1
                 old_sigma = dcopy(new_sigma)
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)
@@ -243,9 +247,10 @@ class Solver(ABC):
         """String formatting for the class
         """
         return "<algorithm.Solver metrics={}".format({
+            'simplifications': self.__simplifications,
             'splits': self.__splits,
             'backtracks': self.__backtracks,
-            'calls:': self.__dpll_calls
+            'calls:': self.__dpll_calls,
         })
 
 
