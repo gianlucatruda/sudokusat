@@ -3,6 +3,7 @@
 from typing import List, Tuple
 from random import choice
 from collections import Counter
+from copy import deepcopy as dcopy
 import math
 
 
@@ -50,7 +51,8 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
     """
 
     # Step 1 : Find Clause with Minimum Size
-    new_sigma = sigma.sort()
+    new_sigma = dcopy(sigma)
+    new_sigma.sort(key=lambda arr: len(arr))
     min_size_clause = new_sigma[0]
 
     # Step 2 : Find the literal with maximum occurrence (positive or negative)
