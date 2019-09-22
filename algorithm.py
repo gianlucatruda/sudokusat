@@ -70,6 +70,7 @@ class Solver(ABC):
     def performance(self) -> dict:
         """Returns performance statistics"""
         return {
+            'heuristic': self.split_heuristic.__name__,
             'simplifications': self.__simplifications,
             'calls': self.__dpll_calls,
             'splits': self.__splits,

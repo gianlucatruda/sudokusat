@@ -15,6 +15,10 @@ import sys
 import ast
 import time
 from pathlib import Path
+import argparse
+
+LOGDIR = 'logs/'
+CACHE = 'checkpoints/'
 
 
 def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None, cache=None):
@@ -78,7 +82,7 @@ def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None, cache=None)
             status_update = f'Pass: {passcount} Fail: {failcount} Timeout: {timeouts}'
             logger.warning(status_update)
 
-        if i % 300 == 0 and cache is not None:
+        if i % 300 == 0 and i > 0 and cache is not None:
             try:
                 # Persist the results (so far) to disk
                 now = datetime.now().strftime('%m-%d-%H_%M_%S')
@@ -95,11 +99,20 @@ def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None, cache=None)
 
 if __name__ == '__main__':
 
-    LOGDIR = 'logs/'
-    LOGLEVEL = 'INFO'
-    HEURISTIC = random_split
-    SAMPLE = 20
-    CACHE = 'checkpoints/'
+    parser = argparse.ArgumentParser(
+        description='Testing system for SAT solver applied to sudoku.')
+    parser.add_argument('dataset', type=str)
+    parser.add_argument('-S', type=int,
+                        required=False, choices=[1, 2, 3], default=1,
+                        help='Specify which heuristic strategy to use. \
+                            (1) Random, (2) MOMs, (3) 2-sided JW.')
+    parser.add_argument('-n', type=int, required=False,
+                        help='The size of the sample to take from the dataset. Default NONE (use all).')
+
+    parser.add_argument('-l', type=str, required=False, choices=[
+                        'DEBUG', 'INFO', 'WARNING'], default='INFO', help='The log level to use for stdout.')
+
+    args = parser.parse_args()
 
     # Configure logging to stderr
     logger.remove()
@@ -108,15 +121,18 @@ if __name__ == '__main__':
     # Configure logging to file
     if not os.path.exists(LOGDIR):
         os.makedirs(LOGDIR)
-    logger.add("logs/{time}.log", level=LOGLEVEL)
+    logger.add("logs/{time}.log", level=args.l)
 
-    args = sys.argv
-    if len(args) != 2:
-        print('Pass in the filename as an argument!')
-        sys.exit(1)
-    fname = args[1]
+    # Assign the corresponding splitting heuristic
+    heuristic = [random_split, moms_split,
+                 jeroslow_wang_split][args.S - 1]
+    print(f'Using {heuristic} heuristic')
+
+    fname = args.dataset
     dataset = pd.read_csv(fname)
-    df = test_solver(dataset, HEURISTIC, sample=SAMPLE, cache=CACHE)
+
+    # Run the tests
+    df = test_solver(dataset, heuristic, sample=args.n, cache=CACHE)
     print(df.describe())
 
     # Save results to custom csv file
