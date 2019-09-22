@@ -258,7 +258,7 @@ class Solver(ABC):
         """String formatting for the class
         """
         return "<algorithm.Solver metrics={}".format({
-            'heuristic': self.split_heuristic,
+            'heuristic': self.split_heuristic.__name__,
             'simplifications': self.__simplifications,
             'splits': self.__splits,
             'backtracks': self.__backtracks,
