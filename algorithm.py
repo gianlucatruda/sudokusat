@@ -10,15 +10,16 @@ from abc import ABC
 from typing import List, Tuple
 
 
-BACKTRACK_THRESHOLD = 400  # How many backtracks before timing out
-
-
 class Solver(ABC):
     """General-purpose Satisfiability solver.
     """
 
-    def __init__(self, sigma: List[List[int]], split_heuristic=random_split):
+    def __init__(self,
+                 sigma: List[List[int]],
+                 split_heuristic=random_split,
+                 backtrack_thresh=400):
         """Constructor for `Solver` class
+
 
         Parameters
         ----------
@@ -26,11 +27,18 @@ class Solver(ABC):
             A PL expression in DIMACS encoding.
             The literals are integers (+ for True, - for False).
             The clauses are lists of those integers.
+        split_heuristic : function, optional
+            The heuristic function to use at the splitting step of
+            DPLL algorithm, by default random_split
+        backtrack_thresh : int, optional
+            The number of backtracks after which the solver should timeout,
+            by default 400
         """
 
         self.__sigma = dcopy(sigma)
         self.sigma = sigma
         self.split_heuristic = split_heuristic
+        self.backtrack_threshold = backtrack_thresh
         collapsed = list(set([abs(y) for x in sigma for y in x]))
         self.variables = {k: None for k in collapsed}
         self.__simplifications = 0
@@ -102,10 +110,10 @@ class Solver(ABC):
         """
 
         self.__dpll_calls += 1
-        if self.__backtracks > BACKTRACK_THRESHOLD:
+        if self.__backtracks > self.backtrack_threshold:
             if not self.__timedout:
                 logger.error(
-                    f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
+                    f'Timeout after {self.backtrack_threshold} backtracks!')
                 self.__timedout = True
             return False, variables
 
