@@ -14,14 +14,20 @@ from datetime import datetime
 import sys
 import ast
 import time
+from pathlib import Path
 
 
-def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None):
+def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None, cache=None):
     """Tests the SAT Solver on sudokus in a DataFrame
     """
 
     if not isinstance(dataset, pd.DataFrame):
         raise ValueError('Requires a dataframe as input.')
+
+    if cache is not None:
+        cache = Path(cache)
+        if not os.path.exists(cache):
+            os.makedirs(cache)
 
     if sample is None:
         df = dataset.copy()
@@ -37,7 +43,7 @@ def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None):
     passcount, failcount, timeouts = 0, 0, 0
     logger.warning(f"Testing solver on {len(sudokus)} sudokus\n\n")
 
-    for s in tqdm(sudokus):
+    for i, s in enumerate(tqdm(sudokus)):
         perf = {'puzzle': s, 'correct': False}
         try:
             sigma = dcopy(rules)
@@ -71,6 +77,17 @@ def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None):
             stats.append(perf)
             status_update = f'Pass: {passcount} Fail: {failcount} Timeout: {timeouts}'
             logger.warning(status_update)
+
+        if i % 300 == 0 and cache is not None:
+            try:
+                # Persist the results (so far) to disk
+                now = datetime.now().strftime('%m-%d-%H_%M_%S')
+                cache_name = f"{cache}/{now}_{split_heuristic.__name__}.csv"
+                pd.DataFrame(stats).to_csv(cache_name)
+                logger.warning(f'Latest cache: {cache_name}')
+            except Exception as e:
+                logger.warning(e)
+
     logger.warning(status_update)
 
     return pd.DataFrame(stats)
@@ -81,7 +98,8 @@ if __name__ == '__main__':
     LOGDIR = 'logs/'
     LOGLEVEL = 'INFO'
     HEURISTIC = random_split
-    SAMPLE = None
+    SAMPLE = 20
+    CACHE = 'checkpoints/'
 
     # Configure logging to stderr
     logger.remove()
@@ -90,7 +108,7 @@ if __name__ == '__main__':
     # Configure logging to file
     if not os.path.exists(LOGDIR):
         os.makedirs(LOGDIR)
-    logger.add("logs/file_{time}.log", level=LOGLEVEL)
+    logger.add("logs/{time}.log", level=LOGLEVEL)
 
     args = sys.argv
     if len(args) != 2:
@@ -98,7 +116,7 @@ if __name__ == '__main__':
         sys.exit(1)
     fname = args[1]
     dataset = pd.read_csv(fname)
-    df = test_solver(dataset, HEURISTIC, sample=SAMPLE)
+    df = test_solver(dataset, HEURISTIC, sample=SAMPLE, cache=CACHE)
     print(df.describe())
 
     # Save results to custom csv file
