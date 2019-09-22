@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 import sys
 import ast
+import time
 
 
 def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None):
@@ -43,10 +44,13 @@ def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None):
             sigma.extend(s)
             orig_sigma = dcopy(sigma)
             solver = Solver(sigma, split_heuristic=split_heuristic)
+            start_time = time.time()
             res = solver.solve()
+            solve_time = time.time() - start_time
             var = solver.variables
             perf = solver.performance
             perf['puzzle'] = s
+            perf['running_time'] = solve_time
 
             if solver.timedout:
                 timeouts += 1
