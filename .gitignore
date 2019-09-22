@@ -135,3 +135,6 @@ data/*
 
 # vscode config directory
 .vscode/*
+
+# .csv results files
+*.csv

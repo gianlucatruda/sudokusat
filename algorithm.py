@@ -10,7 +10,7 @@ from abc import ABC
 from typing import List, Tuple
 
 
-BACKTRACK_THRESHOLD = 100  # How many backtracks before timeing out
+BACKTRACK_THRESHOLD = 400  # How many backtracks before timing out
 
 
 class Solver(ABC):
@@ -33,10 +33,12 @@ class Solver(ABC):
         self.split_heuristic = split_heuristic
         collapsed = list(set([abs(y) for x in sigma for y in x]))
         self.variables = {k: None for k in collapsed}
+        self.__simplifications = 0
         self.__splits = 0
         self.__backtracks = 0
         self.__dpll_calls = 0
         self.__timedout = False
+        self.__conclusion = None
 
     def solve(self) -> bool:
         """Find whether the embedded PL expression is `SAT` or `UNSAT`
@@ -50,9 +52,22 @@ class Solver(ABC):
         res, self.variables = self.__dpll(self.sigma, self.variables)
         if res:
             logger.warning('SAT')
+            self.__conclusion = 'SAT'
         else:
             logger.warning('UNSAT')
+            self.__conclusion = 'UNSAT'
         return res
+
+    @property
+    def performance(self) -> dict:
+        """Returns performance statistics"""
+        return {
+            'simplifications': self.__simplifications,
+            'calls': self.__dpll_calls,
+            'splits': self.__splits,
+            'backtracks': self.__backtracks,
+            'conclusion': 'TIMEOUT' if self.__timedout else self.__conclusion,
+        }
 
     @property
     def timedout(self) -> bool:
@@ -88,12 +103,15 @@ class Solver(ABC):
 
         self.__dpll_calls += 1
         if self.__backtracks > BACKTRACK_THRESHOLD:
-            logger.error(f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
-            self.__timedout = True
+            if not self.__timedout:
+                logger.error(
+                    f'Timeout after {BACKTRACK_THRESHOLD} backtracks!')
+                self.__timedout = True
             return False, variables
 
         logger.debug(
-            f'DPLL | Clauses: {len(sigma)}\tUndefined: {len([x for x in list(variables.values()) if x is None])}')
+            f'DPLL | Clauses: {len(sigma)}\tUndefined: \
+                {len([x for x in list(variables.values()) if x is None])}')
 
         # Return SAT if the expression is empty
         if len(sigma) < 1:
@@ -113,8 +131,11 @@ class Solver(ABC):
             new_sigma = self.__assign_simplify(new_sigma, new_variables)
 
             # Keep simplifying as long as you can
-            while self.__diff_shape(old_sigma, new_sigma
-                                    ) and len(new_sigma) > 1 and [] not in new_sigma:
+            while self.__diff_shape(old_sigma, new_sigma) and (
+                    len(new_sigma) > 1) and (
+                    [] not in new_sigma):
+
+                self.__simplifications += 1
                 old_sigma = dcopy(new_sigma)
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)
@@ -230,9 +251,10 @@ class Solver(ABC):
         """
         return "<algorithm.Solver metrics={}".format({
             'heuristic': self.split_heuristic,
+            'simplifications': self.__simplifications,
             'splits': self.__splits,
             'backtracks': self.__backtracks,
-            'calls:': self.__dpll_calls
+            'calls:': self.__dpll_calls,
         })
 
 
