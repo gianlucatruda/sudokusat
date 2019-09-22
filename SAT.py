@@ -7,6 +7,8 @@ from algorithm import Solver
 from heuristics import random_split, moms_split, jeroslow_wang_split
 from sudoku_verifier import is_valid, build_grid
 from rule_io import read_rules
+from loguru import logger
+import sys
 
 
 if __name__ == '__main__':
@@ -20,6 +22,8 @@ if __name__ == '__main__':
     parser.add_argument('-b', type=int, required=False, default=400,
                         help='Specify after how many backtracks the \
                             solver should timeout. Default 400.')
+    parser.add_argument('--sudoku', default=False, action='store_true',
+                        help='If the SAT problem is a sudoku, then print the solution in a grid format.')
 
     # Parse the CL arguments into a Namespace
     args = parser.parse_args()
@@ -38,6 +42,10 @@ if __name__ == '__main__':
     if not 5 < args.b < 10000:
         raise ValueError(f'Backtrack threshold should be between 5 and 10000')
 
+    # Configure logging to stderr
+    logger.remove()
+    logger.add(sys.stderr, level="INFO")
+
     # Read the data files and run solver
     sigma = read_rules(infile)
     solver = Solver(sigma,
@@ -50,8 +58,9 @@ if __name__ == '__main__':
         print("The solver timed out before completing.")
     else:
         if res:
-            grid = build_grid(var)
-            print(grid)
+            if args.sudoku:
+                grid = build_grid(var)
+                print(grid)
         else:
             print('Unsatisfiable')
     exit
