@@ -103,37 +103,27 @@ def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    # Dictionary containing all different literals and their scores
-    literals_and_scores = {}
+    # Calculate weightings of clauses upfront
+    clause_weights = {str(c): 2**(-len(c)) for c in sigma}
+    lits = [y for x in sigma for y in x]
+    scores = {key: 0 for key in (lits + list(map(lambda x: -1*x, lits)))}
+    for lit in lits:
+        score = 0
+        for clause in sigma:
+            if lit in clause:
+                score += clause_weights[str(clause)]
+        scores[lit] = score
 
-    # iterate over all clauses, identifies literal with max. occurrence in a certain clause
-    for clause in sigma:
-        new_clause = clause
-        for literal in clause:
-            # inverse literals so that negatives and positives will be counted as one literal identity
-            neg_lit = -1 * literal
-            new_clause = new_clause.append(neg_lit)
-            # creates sorted list of occurrences of literals
-        literal_counter_list = Counter(new_clause).values().sort()
-        print(literal_counter_list)
+    two_side_scores = {abs(lit): 0 for lit in lits}
+    for lit in lits:
+        score = 0
+        if lit in scores.keys():
+            score += scores[lit]
+        if (-1*lit) in scores.keys():
+            score += scores[-1*lit]
+        two_side_scores[abs(lit)] = score
 
-        lit_max_occurrence = literal_counter_list.keys()[0]
-        print('literal, that occurs most often:', lit_max_occurrence)
-
-        sum_lit_max_occurrence = literal_counter_list.values()[0]
-        print('the literal', lit_max_occurrence,
-              'occurs ', sum_lit_max_occurrence, 'times.')
-
-        score_lit_max_occurrence = sum_lit_max_occurrence * \
-            math.pow(2, -len(clause))
-        literals_and_scores.update(
-            {lit_max_occurrence: score_lit_max_occurrence})
-
-    literals_and_scores_sorted = literals_and_scores.values().sort()[0]
-    predicate = next(iter(literals_and_scores_sorted))
-
-    # TODO re-evaluate this
-    # Choose a value (randomly)
-    val = choice([True, False])
+    predicate = max(two_side_scores, key=two_side_scores.get)
+    val = True if scores[predicate] >= scores[-1 * predicate] else False
 
     return predicate, val
