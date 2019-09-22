@@ -12,35 +12,37 @@ import pandas as pd
 import os
 from datetime import datetime
 import sys
+import ast
 
 
-LOGDIR = 'logs/'
-LOGLEVEL = 'INFO'
-
-
-def test_solver(fname='data/1000 sudokus.txt', n=None, return_dataframe=False):
-    """Tests the SAT Solver on `n` sudokus from `fname`
+def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None):
+    """Tests the SAT Solver on sudokus in a DataFrame
     """
+
+    if not isinstance(dataset, pd.DataFrame):
+        raise ValueError('Requires a dataframe as input.')
+
+    if sample is None:
+        df = dataset.copy()
+    else:
+        df = dataset.copy().sample(sample)
 
     # Create array to store performance stats
     stats = []
 
     rules = read_rules('sudoku-rules.txt')
-    sudokus = read_data(fname)
+    sudokus = [ast.literal_eval(puzzle) for puzzle in df.puzzle.values]
 
     passcount, failcount, timeouts = 0, 0, 0
+    logger.warning(f"Testing solver on {len(sudokus)} sudokus\n\n")
 
-    if n is None:
-        n = len(sudokus)
-
-    logger.warning(f"Testing solver on first {n} sudokus in {fname}:\n\n")
-    for s in tqdm(sudokus[:n]):
+    for s in tqdm(sudokus):
         perf = {'puzzle': s, 'correct': False}
         try:
             sigma = dcopy(rules)
             sigma.extend(s)
             orig_sigma = dcopy(sigma)
-            solver = Solver(sigma, split_heuristic=moms_split)
+            solver = Solver(sigma, split_heuristic=split_heuristic)
             res = solver.solve()
             var = solver.variables
             perf = solver.performance
@@ -65,13 +67,17 @@ def test_solver(fname='data/1000 sudokus.txt', n=None, return_dataframe=False):
             stats.append(perf)
             status_update = f'Pass: {passcount} Fail: {failcount} Timeout: {timeouts}'
             logger.warning(status_update)
-
     logger.warning(status_update)
-    if return_dataframe:
-        return pd.DataFrame(stats)
+
+    return pd.DataFrame(stats)
 
 
 if __name__ == '__main__':
+
+    LOGDIR = 'logs/'
+    LOGLEVEL = 'INFO'
+    HEURISTIC = random_split
+    SAMPLE = None
 
     # Configure logging to stderr
     logger.remove()
@@ -87,7 +93,8 @@ if __name__ == '__main__':
         print('Pass in the filename as an argument!')
         sys.exit(1)
     fname = args[1]
-    df = test_solver(fname=fname, return_dataframe=True)
+    dataset = pd.read_csv(fname)
+    df = test_solver(dataset, HEURISTIC, sample=SAMPLE)
     print(df.describe())
 
     # Save results to custom csv file
