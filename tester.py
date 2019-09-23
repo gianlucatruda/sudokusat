@@ -126,7 +126,7 @@ if __name__ == '__main__':
     # Assign the corresponding splitting heuristic
     heuristic = [random_split, moms_split,
                  jeroslow_wang_split][args.S - 1]
-    print(f'Using {heuristic} heuristic')
+    print(f'Using {heuristic.__name__} heuristic')
 
     fname = args.dataset
     dataset = pd.read_csv(fname)
