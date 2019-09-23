@@ -23,9 +23,11 @@ def random_split(sigma: List[List], variables: dict) -> Tuple:
     Tuple
         The selected `predicate` and the selected `value`
     """
-    # Choose a predicate (randomly) from unassigned variables
-    predicate = choice(
-        [k for k in variables.keys() if variables[k] is None])
+
+    # Get a list of all literals in sigma
+    lits = list(chain.from_iterable(sigma))
+    # Choose a predicate (randomly) from literals
+    predicate = abs(choice(lits))
     # Choose a value (randomly)
     val = choice([True, False])
 
