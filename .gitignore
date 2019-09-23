@@ -142,3 +142,6 @@ data/*
 # interactive python sessions/notebooks
 *.ipy
 *.ipynb
+
+# line profiling files
+*.lprof

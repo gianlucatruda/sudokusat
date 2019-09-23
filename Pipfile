@@ -15,6 +15,7 @@ pipreqs = "*"
 ipdb = "*"
 pylint = "*"
 "autopep8" = "*"
+line-profiler = "*"
 
 [requires]
 python_version = "3.6"
