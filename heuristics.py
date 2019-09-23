@@ -103,16 +103,13 @@ def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    # Calculate weightings of clauses upfront
-    clause_weights = {str(c): 2**(-len(c)) for c in sigma}
     lits = [y for x in sigma for y in x]
     scores = {key: 0 for key in (lits + list(map(lambda x: -1*x, lits)))}
-    for lit in lits:
-        score = 0
-        for clause in sigma:
-            if lit in clause:
-                score += clause_weights[str(clause)]
-        scores[lit] = score
+
+    for clause in sigma:
+        weight = 2**(-len(clause))
+        for lit in list(set(clause)):
+            scores[lit] += weight
 
     two_side_scores = {abs(lit): 0 for lit in lits}
     for lit in lits:
