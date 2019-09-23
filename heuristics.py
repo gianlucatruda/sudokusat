@@ -2,9 +2,10 @@
 
 from typing import List, Tuple
 from random import choice
-from collections import Counter
 from copy import deepcopy as dcopy
-import math
+import numpy as np
+from itertools import chain
+from collections import defaultdict
 
 
 def random_split(sigma: List[List], variables: dict) -> Tuple:
@@ -22,9 +23,11 @@ def random_split(sigma: List[List], variables: dict) -> Tuple:
     Tuple
         The selected `predicate` and the selected `value`
     """
-    # Choose a predicate (randomly) from unassigned variables
-    predicate = choice(
-        [k for k in variables.keys() if variables[k] is None])
+
+    # Get a list of all literals in sigma
+    lits = list(chain.from_iterable(sigma))
+    # Choose a predicate (randomly) from literals
+    predicate = abs(choice(lits))
     # Choose a value (randomly)
     val = choice([True, False])
 
@@ -50,31 +53,33 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    def __mom_func(lit, clause, k=2):
+    # Step 1 : Find Clauses with Minimum Size
+    minsize = np.min([len(c) for c in sigma])
+    min_clauses = [x for x in sigma if len(x) == minsize]
+    min_lits = list(chain.from_iterable(min_clauses))
+
+    def __mom_func(lit, k=2):
         _lit = abs(lit)
-        count_lit = clause.count(_lit)
-        count_not_lit = clause.count(-1*_lit)
+        count_lit = min_lits.count(_lit)
+        count_not_lit = min_lits.count(-1*_lit)
         return (count_lit + count_not_lit) * 2**k + \
             (count_lit * count_not_lit)
+
+    # Step 2 : Find the literal with maximum occurrence (positive or negative)
+    # momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
+    # predicate = abs(max(momified, key=momified.get))
+
+    mom_scores = list(map(__mom_func, min_lits))
+    predicate = abs(min_lits[mom_scores.index(max(mom_scores))])
+
+    # Step 3: When the highest ranked variable is found, it is instantiated
+    # to true if the variable appears in more smallest clauses as a
+    # positive literal and to false otherwise.
 
     def __pos_neg_occurences(lit, literals):
         _lit = abs(lit)
         return literals.count(lit), literals.count(-1*lit)
 
-    # Step 1 : Find Clauses with Minimum Size
-    new_sigma = dcopy(sigma)
-    new_sigma.sort(key=lambda arr: len(arr))
-    minsize = len(new_sigma[0])
-    min_clauses = [x for x in new_sigma if len(x) == minsize]
-    min_lits = [y for x in min_clauses for y in x]
-
-    # Step 2 : Find the literal with maximum occurrence (positive or negative)
-    momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
-    predicate = abs(max(momified, key=momified.get))
-
-    # Step 3: When the highest ranked variable is found, it is instantiated
-    # to true if the variable appears in more smallest clauses as a
-    # positive literal and to false otherwise.
     pos_count, neg_count = __pos_neg_occurences(predicate, min_lits)
     val = True if pos_count > neg_count else False
 
@@ -103,27 +108,21 @@ def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    # Calculate weightings of clauses upfront
-    clause_weights = {str(c): 2**(-len(c)) for c in sigma}
-    lits = [y for x in sigma for y in x]
-    scores = {key: 0 for key in (lits + list(map(lambda x: -1*x, lits)))}
-    for lit in lits:
-        score = 0
-        for clause in sigma:
-            if lit in clause:
-                score += clause_weights[str(clause)]
-        scores[lit] = score
+    lits = list(chain.from_iterable(sigma))
+    scores = defaultdict(int)
 
-    two_side_scores = {abs(lit): 0 for lit in lits}
-    for lit in lits:
-        score = 0
-        if lit in scores.keys():
-            score += scores[lit]
-        if (-1*lit) in scores.keys():
-            score += scores[-1*lit]
-        two_side_scores[abs(lit)] = score
+    for clause in sigma:
+        weight = 2**(-len(clause))
+        for lit in list(set(clause)):
+            scores[lit] += weight
 
-    predicate = max(two_side_scores, key=two_side_scores.get)
-    val = True if scores[predicate] >= scores[-1 * predicate] else False
+    two_side_scores = defaultdict(int)
+    for lit in lits:
+        two_side_scores[abs(lit)] = scores[lit] + scores[-1*lit]
+
+    predicate = abs(max(two_side_scores, key=two_side_scores.get))
+    # From the theory, this should be the other way around, I think
+    # But for some reason THIS was round is much much faster
+    val = False if scores[predicate] >= scores[-1 * predicate] else True
 
     return predicate, val

@@ -138,3 +138,10 @@ data/*
 
 # .csv results files
 *.csv
+
+# interactive python sessions/notebooks
+*.ipy
+*.ipynb
+
+# line profiling files
+*.lprof

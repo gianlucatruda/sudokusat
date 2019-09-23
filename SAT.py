@@ -4,30 +4,53 @@ import argparse
 import os
 import pathlib
 from algorithm import Solver
+from heuristics import random_split, moms_split, jeroslow_wang_split
 from sudoku_verifier import is_valid, build_grid
 from rule_io import read_rules
+from loguru import logger
+import sys
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='General purpose SAT solver for sukoku applications.')
-    parser.add_argument('input_file', type=str, nargs=1)
-    parser.add_argument('-S', type=int, nargs=1,
+    parser.add_argument('input_file', type=str)
+    parser.add_argument('-S', type=int,
                         required=False, choices=[1, 2, 3], default=1,
-                        help='Specify which heuristic strategy to use.')
+                        help='Specify which heuristic strategy to use. \
+                            (1) Random, (2) MOMs, (3) 2-sided JW.')
+    parser.add_argument('-b', type=int, required=False, default=400,
+                        help='Specify after how many backtracks the \
+                            solver should timeout. Default 400.')
+    parser.add_argument('--sudoku', default=False, action='store_true',
+                        help='If the SAT problem is a sudoku, then print the solution in a grid format.')
 
-    # TODO add argument for specifying timeout threshold
-    # TODO add argument for specifying output files
-
+    # Parse the CL arguments into a Namespace
     args = parser.parse_args()
-    infile = pathlib.Path(args.input_file[0])
+
+    # Verify that file exists
+    infile = pathlib.Path(args.input_file)
     if not os.path.exists(infile):
         raise FileExistsError(f"Could not locate '{infile}'")
 
-    # TODO connect strategy param to heuristics
+    # Assign the corresponding splitting heuristic
+    heuristic = [random_split, moms_split,
+                 jeroslow_wang_split][args.S - 1]
+    print(f'Using {heuristic} heuristic')
 
+    # Verify that backtrack threshold is viable
+    if not 5 < args.b < 10000:
+        raise ValueError(f'Backtrack threshold should be between 5 and 10000')
+
+    # Configure logging to stderr
+    logger.remove()
+    logger.add(sys.stderr, level="INFO")
+
+    # Read the data files and run solver
     sigma = read_rules(infile)
-    solver = Solver(sigma)
+    solver = Solver(sigma,
+                    split_heuristic=heuristic,
+                    backtrack_thresh=args.b)
     res = solver.solve()
     var = solver.variables
 
@@ -35,9 +58,9 @@ if __name__ == '__main__':
         print("The solver timed out before completing.")
     else:
         if res:
-            grid = build_grid(var)
-            print(grid)
+            if args.sudoku:
+                grid = build_grid(var)
+                print(grid)
         else:
             print('Unsatisfiable')
-
     exit
