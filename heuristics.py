@@ -2,9 +2,10 @@
 
 from typing import List, Tuple
 from random import choice
-from collections import Counter
 from copy import deepcopy as dcopy
-import math
+import numpy as np
+from itertools import chain
+from collections import defaultdict
 
 
 def random_split(sigma: List[List], variables: dict) -> Tuple:
@@ -80,6 +81,7 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
 
     return predicate, val
 
+
 def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
     """ Two Sided Jeroslow-Wang heuristic
 
@@ -102,24 +104,17 @@ def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    lits = [y for x in sigma for y in x]
-    max_lit = max([abs(max(lits)), abs(min(lits))])
-
-    scores = {key: 0 for key in range(-max_lit, max_lit+1)}
+    lits = list(chain.from_iterable(sigma))
+    scores = defaultdict(int)
 
     for clause in sigma:
         weight = 2**(-len(clause))
         for lit in list(set(clause)):
             scores[lit] += weight
 
-    two_side_scores = {}
+    two_side_scores = defaultdict(int)
     for lit in lits:
-        score = 0
-        if lit in scores.keys():
-            score += scores[lit]
-        if (-1*lit) in scores.keys():
-            score += scores[-1*lit]
-        two_side_scores[abs(lit)] = score
+        two_side_scores[abs(lit)] = scores[lit] + scores[-1*lit]
 
     predicate = max(two_side_scores, key=two_side_scores.get)
     val = True if scores[predicate] >= scores[-1 * predicate] else False
