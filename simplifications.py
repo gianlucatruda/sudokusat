@@ -1,7 +1,7 @@
 """Implementations of DPLL simplification rules"""
 
-from copy import deepcopy as dcopy
 from typing import List, Tuple
+from itertools import chain
 
 
 def tautology(sigma: List[List]) -> List[List]:
@@ -52,7 +52,7 @@ def unit_clause(sigma: List[List], variables: dict) -> Tuple:
         A nested list of `int` or `bool` literals similar to `sigma`
         and an updated copy of the `variables` dictionary.
     """
-    new_variables = dcopy(variables)
+    new_variables = variables
     new_sigma = []
     for clause in sigma:
         new_clause = clause
@@ -89,9 +89,8 @@ def pure_literals(sigma: List[List], variables: dict) -> Tuple:
         A nested list of `int` or `bool` literals similar to `sigma`
         and an updated copy of the `variables` dictionary.
     """
-    new_sigma = dcopy(sigma)
-    new_variables = dcopy(variables)
-    literals = list(set([y for x in sigma for y in x]))
+    # literals = list(set([y for x in sigma for y in x]))
+    literals = list(set(list(chain.from_iterable(sigma))))
     bools = [True, False]
     pos = [x for x in literals if x > 0 and x not in bools]
     neg = [x for x in literals if x < 0 and x not in bools]
@@ -99,11 +98,11 @@ def pure_literals(sigma: List[List], variables: dict) -> Tuple:
     pures.extend([x for x in neg if (-1 * x) not in pos])
     # print(f'Pures: {pures}')
     for p in pures:
-        old_val = new_variables[abs(p)]
+        old_val = variables[abs(p)]
         new_val = True if p > 0 else False
         if old_val is not None and old_val != new_val:
-            new_sigma = [[]]
+            sigma = [[]]
         else:
-            new_variables[abs(p)] = new_val
+            variables[abs(p)] = new_val
 
-    return new_sigma, new_variables
+    return sigma, variables
