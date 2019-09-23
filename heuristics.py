@@ -80,7 +80,6 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
 
     return predicate, val
 
-
 def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
     """ Two Sided Jeroslow-Wang heuristic
 
@@ -104,14 +103,16 @@ def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
     """
 
     lits = [y for x in sigma for y in x]
-    scores = {key: 0 for key in (lits + list(map(lambda x: -1*x, lits)))}
+    max_lit = max([abs(max(lits)), abs(min(lits))])
+
+    scores = {key: 0 for key in range(-max_lit, max_lit+1)}
 
     for clause in sigma:
         weight = 2**(-len(clause))
         for lit in list(set(clause)):
             scores[lit] += weight
 
-    two_side_scores = {abs(lit): 0 for lit in lits}
+    two_side_scores = {}
     for lit in lits:
         score = 0
         if lit in scores.keys():
