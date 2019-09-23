@@ -135,7 +135,7 @@ class Solver(ABC):
         else:
             old_sigma = [[]]
             new_sigma = sigma
-            new_variables = dcopy(variables)
+            new_variables = variables
             new_sigma = tautology(new_sigma)
             new_sigma = self.__assign_simplify(new_sigma, new_variables)
 
