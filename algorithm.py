@@ -134,7 +134,7 @@ class Solver(ABC):
         # Simplify (tautologies, unit clauses, pure literals)
         else:
             old_sigma = [[]]
-            new_sigma = dcopy(sigma)
+            new_sigma = sigma
             new_variables = dcopy(variables)
             new_sigma = tautology(new_sigma)
             new_sigma = self.__assign_simplify(new_sigma, new_variables)
@@ -145,7 +145,7 @@ class Solver(ABC):
                     [] not in new_sigma):
 
                 self.__simplifications += 1
-                old_sigma = dcopy(new_sigma)
+                old_sigma = new_sigma
                 new_sigma, new_variables = pure_literals(
                     new_sigma, new_variables)
                 new_sigma, new_variables = unit_clause(
