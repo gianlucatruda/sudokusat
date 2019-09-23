@@ -116,7 +116,9 @@ def jeroslow_wang_split(sigma: List[List], variables: dict) -> Tuple:
     for lit in lits:
         two_side_scores[abs(lit)] = scores[lit] + scores[-1*lit]
 
-    predicate = max(two_side_scores, key=two_side_scores.get)
-    val = True if scores[predicate] >= scores[-1 * predicate] else False
+    predicate = abs(max(two_side_scores, key=two_side_scores.get))
+    # From the theory, this should be the other way around, I think
+    # But for some reason THIS was round is much much faster
+    val = False if scores[predicate] >= scores[-1 * predicate] else True
 
     return predicate, val
