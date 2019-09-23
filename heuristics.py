@@ -53,31 +53,33 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
         The selected `predicate` and the selected `value`
     """
 
-    def __mom_func(lit, clause, k=2):
+    # Step 1 : Find Clauses with Minimum Size
+    minsize = np.min([len(c) for c in sigma])
+    min_clauses = [x for x in sigma if len(x) == minsize]
+    min_lits = list(chain.from_iterable(min_clauses))
+
+    def __mom_func(lit, k=2):
         _lit = abs(lit)
-        count_lit = clause.count(_lit)
-        count_not_lit = clause.count(-1*_lit)
+        count_lit = min_lits.count(_lit)
+        count_not_lit = min_lits.count(-1*_lit)
         return (count_lit + count_not_lit) * 2**k + \
             (count_lit * count_not_lit)
+
+    # Step 2 : Find the literal with maximum occurrence (positive or negative)
+    # momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
+    # predicate = abs(max(momified, key=momified.get))
+
+    mom_scores = list(map(__mom_func, min_lits))
+    predicate = abs(min_lits[mom_scores.index(max(mom_scores))])
+
+    # Step 3: When the highest ranked variable is found, it is instantiated
+    # to true if the variable appears in more smallest clauses as a
+    # positive literal and to false otherwise.
 
     def __pos_neg_occurences(lit, literals):
         _lit = abs(lit)
         return literals.count(lit), literals.count(-1*lit)
 
-    # Step 1 : Find Clauses with Minimum Size
-    new_sigma = dcopy(sigma)
-    new_sigma.sort(key=lambda arr: len(arr))
-    minsize = len(new_sigma[0])
-    min_clauses = [x for x in new_sigma if len(x) == minsize]
-    min_lits = [y for x in min_clauses for y in x]
-
-    # Step 2 : Find the literal with maximum occurrence (positive or negative)
-    momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
-    predicate = abs(max(momified, key=momified.get))
-
-    # Step 3: When the highest ranked variable is found, it is instantiated
-    # to true if the variable appears in more smallest clauses as a
-    # positive literal and to false otherwise.
     pos_count, neg_count = __pos_neg_occurences(predicate, min_lits)
     val = True if pos_count > neg_count else False
 
