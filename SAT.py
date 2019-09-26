@@ -3,7 +3,7 @@
 import argparse
 import os
 import pathlib
-from algorithm import Solver
+from algorithm import Solver, verify_sat
 from heuristics import random_split, moms_split, jeroslow_wang_split
 from sudoku_verifier import is_valid, build_grid
 from io_tools import read_dimacs
@@ -14,7 +14,8 @@ import sys
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='General purpose SAT solver for sukoku applications.')
-    parser.add_argument('input_file', type=str)
+    parser.add_argument('input_file', help='The path of a DIMACS file to solve.',
+                        type=str)
     parser.add_argument('-S', type=int,
                         required=False, choices=[1, 2, 3], default=1,
                         help='Specify which heuristic strategy to use. \
@@ -24,6 +25,8 @@ if __name__ == '__main__':
                             solver should timeout. Default 400.')
     parser.add_argument('--sudoku', default=False, action='store_true',
                         help='If the SAT problem is a sudoku, then print the solution in a grid format.')
+    parser.add_argument('-l', type=str, required=False, choices=[
+                        'DEBUG', 'INFO', 'WARNING'], default='WARNING', help='The log level to use for stdout.')
 
     # Parse the CL arguments into a Namespace
     args = parser.parse_args()
@@ -36,7 +39,7 @@ if __name__ == '__main__':
     # Assign the corresponding splitting heuristic
     heuristic = [random_split, moms_split,
                  jeroslow_wang_split][args.S - 1]
-    print(f'Using {heuristic} heuristic')
+    print(f'Using {heuristic.__name__} heuristic')
 
     # Verify that backtrack threshold is viable
     if not 5 < args.b < 10000:
@@ -44,7 +47,7 @@ if __name__ == '__main__':
 
     # Configure logging to stderr
     logger.remove()
-    logger.add(sys.stderr, level="INFO")
+    logger.add(sys.stderr, level=args.l)
 
     # Read the data files and run solver
     sigma = read_dimacs(infile)
@@ -58,6 +61,8 @@ if __name__ == '__main__':
         print("The solver timed out before completing.")
     else:
         if res:
+            if not verify_sat(sigma, var):
+                print("CONFLICT!")
             if args.sudoku:
                 grid = build_grid(var)
                 print(grid)
