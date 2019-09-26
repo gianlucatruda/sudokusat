@@ -6,7 +6,7 @@ import pathlib
 from algorithm import Solver
 from heuristics import random_split, moms_split, jeroslow_wang_split
 from sudoku_verifier import is_valid, build_grid
-from rule_io import read_rules
+from io_tools import read_dimacs
 from loguru import logger
 import sys
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     logger.add(sys.stderr, level="INFO")
 
     # Read the data files and run solver
-    sigma = read_rules(infile)
+    sigma = read_dimacs(infile)
     solver = Solver(sigma,
                     split_heuristic=heuristic,
                     backtrack_thresh=args.b)

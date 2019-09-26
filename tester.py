@@ -5,8 +5,7 @@ from copy import deepcopy as dcopy
 from sudoku_verifier import is_valid
 from algorithm import Solver, verify_sat
 from heuristics import random_split, moms_split, jeroslow_wang_split
-from data_loader import read_data
-from rule_io import read_rules
+from io_tools import read_sudokus, read_dimacs
 from loguru import logger
 import pandas as pd
 import os
@@ -16,6 +15,7 @@ import ast
 import time
 from pathlib import Path
 import argparse
+
 
 LOGDIR = 'logs/'
 CACHE = 'checkpoints/'
@@ -41,7 +41,7 @@ def test_solver(dataset: pd.DataFrame, split_heuristic, sample=None, cache=None)
     # Create array to store performance stats
     stats = []
 
-    rules = read_rules('sudoku-rules.txt')
+    rules = read_dimacs('sudoku-rules.txt')
     sudokus = [ast.literal_eval(puzzle) for puzzle in df.puzzle.values]
 
     passcount, failcount, timeouts = 0, 0, 0

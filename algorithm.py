@@ -1,7 +1,5 @@
 """Implementation of DPLL algorithm"""
 
-import rule_io
-import data_loader
 from simplifications import tautology, unit_clause, pure_literals
 from heuristics import random_split
 from copy import deepcopy as dcopy
