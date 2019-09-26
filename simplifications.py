@@ -65,7 +65,6 @@ def unit_clause(sigma: List[List], variables: dict) -> Tuple:
             if old_val is None:
                 new_variables[abs(unit)] = new_val
             if new_val != old_val and old_val is not None:
-                print("Hold up!")
                 new_sigma.append([])
     return new_sigma, new_variables
 

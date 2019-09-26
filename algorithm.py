@@ -1,13 +1,12 @@
 """Implementation of DPLL algorithm"""
 
-import rule_io
-import data_loader
 from simplifications import tautology, unit_clause, pure_literals
 from heuristics import random_split
 from copy import deepcopy as dcopy
 from loguru import logger
 from abc import ABC
 from typing import List, Tuple
+import ipdb
 
 
 class Solver(ABC):
@@ -109,7 +108,6 @@ class Solver(ABC):
         Tuple
             The satisfiability of the expression, the variable values.
         """
-
         self.__dpll_calls += 1
         if self.__backtracks > self.backtrack_threshold:
             if not self.__timedout:
@@ -119,8 +117,7 @@ class Solver(ABC):
             return False, variables
 
         logger.debug(
-            f'DPLL | Clauses: {len(sigma)}\tUndefined: \
-                {len([x for x in list(variables.values()) if x is None])}')
+            f'DPLL(Clauses: {len(sigma)},\tUndefined: {self.unknowns})')
 
         # Return SAT if the expression is empty
         if len(sigma) < 1:
@@ -235,15 +232,18 @@ class Solver(ABC):
             A nested list of `int` or `bool` literals similar to `sigma`
         """
 
-        new_sigma = []
+        def no_truths(clause):
+            """Checks if not truths in a clause (ignoring literal 1)"""
+            for lit in clause:
+                if lit is True and isinstance(lit, bool):
+                    return False
+            return True
 
+        new_sigma = []
         for clause in sigma:
             new_clause = []
             for lit in clause:
-                if lit in [True, False]:
-                    if lit:
-                        new_clause.append(lit)
-                elif values[abs(lit)] is not None:
+                if values[abs(lit)] is not None:
                     val = values[abs(lit)]
                     sign = 1 if lit > 0 else -1
                     lit_val = val if sign == 1 else (not val)
@@ -251,8 +251,9 @@ class Solver(ABC):
                         new_clause.append(lit_val)
                 else:
                     new_clause.append(lit)
-            if new_clause.count(True) is 0:  # Keep only if clause contains no `True`
+            if no_truths(new_clause):  # Keep only if clause contains no `True`
                 new_sigma.append(new_clause)
+
         return new_sigma
 
     def __repr__(self):
@@ -289,8 +290,10 @@ def verify_sat(sigma: List[List], end_values: dict) -> bool:
         for lit in clause:
             val = end_values[abs(lit)]
             if val is not None:
-                new_clause.append(
-                    val) if lit > 0 else new_clause.append(not val)
+                if lit > 0:
+                    new_clause.append(val)
+                else:
+                    new_clause.append(not val)
         new_sigma.append(new_clause)
     assert(len(new_sigma) == len(sigma))
     for i, clause in enumerate(new_sigma):
