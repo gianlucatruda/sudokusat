@@ -61,6 +61,7 @@ if __name__ == '__main__':
         print("The solver timed out before completing.")
     else:
         if res:
+            print('Satisfiable')
             if not verify_sat(sigma, var):
                 print("CONFLICT!")
             if args.sudoku:
