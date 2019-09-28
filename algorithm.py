@@ -6,7 +6,6 @@ from copy import deepcopy as dcopy
 from loguru import logger
 from abc import ABC
 from typing import List, Tuple
-import ipdb
 
 
 class Solver(ABC):
