@@ -56,7 +56,7 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
     # Step 1 : Find Clauses with Minimum Size
     minsize = np.min([len(c) for c in sigma])
     min_clauses = [x for x in sigma if len(x) == minsize]
-    min_lits = list(chain.from_iterable(min_clauses))
+    min_lits = list(set(list(chain.from_iterable(min_clauses))))
 
     def __mom_func(lit, k=2):
         _lit = abs(lit)
@@ -66,9 +66,6 @@ def moms_split(sigma: List[List], variables: dict) -> Tuple:
             (count_lit * count_not_lit)
 
     # Step 2 : Find the literal with maximum occurrence (positive or negative)
-    # momified = {lit: __mom_func(lit, min_lits) for lit in min_lits}
-    # predicate = abs(max(momified, key=momified.get))
-
     mom_scores = list(map(__mom_func, min_lits))
     predicate = abs(min_lits[mom_scores.index(max(mom_scores))])
 
