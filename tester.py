@@ -116,12 +116,12 @@ if __name__ == '__main__':
 
     # Configure logging to stderr
     logger.remove()
-    logger.add(sys.stderr, level="WARNING")
+    logger.add(sys.stderr, level=args.l)
 
     # Configure logging to file
     if not os.path.exists(LOGDIR):
         os.makedirs(LOGDIR)
-    logger.add("logs/{time}.log", level=args.l)
+    logger.add("logs/{time}.log", level="DEBUG")
 
     # Assign the corresponding splitting heuristic
     heuristic = [random_split, moms_split,
