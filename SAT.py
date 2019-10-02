@@ -69,4 +69,5 @@ if __name__ == '__main__':
                 print(grid)
         else:
             print('Unsatisfiable')
+    logger.info(solver)
     exit
