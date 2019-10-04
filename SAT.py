@@ -6,7 +6,7 @@ import pathlib
 from algorithm import Solver, verify_sat
 from heuristics import random_split, moms_split, jeroslow_wang_split
 from sudoku_verifier import is_valid, build_grid
-from io_tools import read_dimacs
+from io_tools import read_dimacs, write_dimacs
 from loguru import logger
 import sys
 
@@ -16,10 +16,12 @@ if __name__ == '__main__':
         description='General purpose SAT solver for sukoku applications.')
     parser.add_argument('input_file', help='The path of a DIMACS file to solve.',
                         type=str)
+    parser.add_argument('-o', type=str, required=False,
+                        help='The path to write the DIMACS output to.')
     parser.add_argument('-S', type=int,
                         required=False, choices=[1, 2, 3], default=1,
                         help='Specify which heuristic strategy to use. \
-                            (1) Random, (2) MOMs, (3) 2-sided JW.')
+                            (1) Random, (2) MOMs, (3) 2-sided JW. Default is 1.')
     parser.add_argument('-b', type=int, required=False, default=400,
                         help='Specify after how many backtracks the \
                             solver should timeout. Default 400.')
@@ -30,7 +32,6 @@ if __name__ == '__main__':
 
     # Parse the CL arguments into a Namespace
     args = parser.parse_args()
-
     # Verify that file exists
     infile = pathlib.Path(args.input_file)
     if not os.path.exists(infile):
@@ -70,4 +71,6 @@ if __name__ == '__main__':
         else:
             print('Unsatisfiable')
     logger.info(solver)
+    if args.o is not None:
+        write_dimacs(args.o, var)
     exit

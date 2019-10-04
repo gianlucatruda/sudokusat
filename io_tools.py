@@ -2,6 +2,7 @@
 
 import os
 from typing import List
+from pathlib import Path
 
 
 def read_dimacs(fname: str, sep=' ') -> List[List]:
@@ -38,6 +39,34 @@ def read_dimacs(fname: str, sep=' ') -> List[List]:
                 clauses.append([int(x) for x in l[:-2].split(sep)])
 
     return clauses
+
+
+def write_dimacs(fname: str, values: dict):
+    """Writes assigned values to file in DIMACS style.
+
+    Parameters
+    ----------
+    fname : str
+        Path to output file.
+    values : dict
+        The assigned variable:value lookup dict.
+    """
+
+    fpath = Path(fname).parents[0]
+    print(fpath)
+    if not os.path.exists(fpath):
+        os.makedirs(fpath)
+
+    output = ''
+
+    for variable, value in values.items():
+        if value is None or value is False:
+            output += f'-{variable} '
+        else:
+            output += f'{variable} '
+
+    with open(fname, 'w') as outfile:
+        outfile.write(output)
 
 
 def read_sudokus(fname: str, shape=(9, 9)) -> List[List[List]]:
