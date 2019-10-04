@@ -78,7 +78,7 @@ Satisfiable
 The following command solves a uniform SAT problem using MOMS heuristic and outputs the variable states to a specified file.
 
 ```bash
-SAT.py -S2 data/satlib/uniform/uf50-218/uf50-0897.cnf -o uf50-0897.out
+python3 SAT.py -S2 data/satlib/uniform/uf50-218/uf50-0897.cnf -o uf50-0897.out
 ``` 
 
 NOTE: You would need to download the `uf50-218` dataset from SATLIB for this to work.
