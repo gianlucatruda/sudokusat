@@ -49,28 +49,28 @@ The `SAT.py` file is the primary command-line interface for *Sudokusat*.
 
 ### Sudoku example
 
-Try solving just the sudoku rules with the following command:
+Try solving a sample sudoku (with rules) in CNF form:
 
 ```bash
-python3 SAT.py sudoku-rules.txt --sudoku
+python3 SAT.py test-sat.txt --sudoku
 ```
 
-This will generate any random sudoku using the random splitting heuristic (default). You should get an output like this:
+This will generate the solution using the random splitting heuristic (default). You should get an output like this:
 
 ```
 Using random_split heuristic
-2019-10-04 13:09:57.477 | WARNING  | algorithm:solve:60 - SAT
+2019-10-04 13:26:20.880 | WARNING  | algorithm:solve:60 - SAT
 Satisfiable
-[[3 5 1 9 6 7 8 2 4]
- [2 4 6 5 3 8 9 1 7]
- [9 8 7 2 4 1 6 3 5]
- [5 9 4 3 1 6 7 8 2]
- [6 1 2 8 7 9 5 4 3]
- [7 3 8 4 5 2 1 9 6]
- [8 7 5 1 2 3 4 6 9]
- [1 6 3 7 9 4 2 5 8]
- [4 2 9 6 8 5 3 7 1]]
-2019-10-04 13:09:57.497 | WARNING  | __main__:<module>:73 - <algorithm.Solver metrics={'heuristic': 'random_split', 'simplifications': 128, 'splits': 50, 'backtracks': 0, 'calls:': 52}
+[[7 9 4 5 8 2 1 3 6]
+ [2 6 8 9 3 1 7 4 5]
+ [3 1 5 4 7 6 9 8 2]
+ [6 8 9 7 1 5 3 2 4]
+ [4 3 2 8 6 9 5 7 1]
+ [1 5 7 2 4 3 8 6 9]
+ [8 2 1 6 5 7 4 9 3]
+ [9 4 3 1 2 8 6 5 7]
+ [5 7 6 3 9 4 2 1 8]]
+2019-10-04 13:26:20.892 | WARNING  | __main__:<module>:73 - <algorithm.Solver metrics={'heuristic': 'random_split', 'simplifications': 39, 'splits': 1, 'backtracks': 0, 'calls:': 3}
 ```
 
 ### General SATs
