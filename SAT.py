@@ -70,7 +70,7 @@ if __name__ == '__main__':
                 print(grid)
         else:
             print('Unsatisfiable')
-    logger.info(solver)
+    logger.warning(solver)
     if args.o is not None:
         write_dimacs(args.o, var)
     exit
